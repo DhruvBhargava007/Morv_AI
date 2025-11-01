@@ -243,7 +243,6 @@ export default function DigitalTwinPage() {
           <div className="flex items-center gap-4">
             <div>
               <h1 className="text-3xl title-brand">MORV AI</h1>
-              <p className="text-[#60A5FA] text-xs mt-0.5 font-mono uppercase tracking-wider">Military CMMS System</p>
             </div>
             <InventoryDropdown 
               selectedTank={currentTank}

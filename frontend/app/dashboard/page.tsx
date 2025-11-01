@@ -108,8 +108,7 @@ export default function DashboardPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-3xl title-brand mb-1">MORV AI</h1>
-              <p className="text-[#60A5FA] text-xs mt-0.5 font-mono uppercase tracking-wider">AI Agent Dashboard</p>
+              <h1 className="text-3xl title-brand">MORV AI</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">

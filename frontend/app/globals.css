@@ -244,11 +244,10 @@
   .title-brand {
     font-weight: 800;
     letter-spacing: 0.1em;
-    background: linear-gradient(135deg, #FFFFFF 0%, #60A5FA 30%, #3B82F6 60%, #2563EB 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.5));
+    color: #9CA3AF;
+    text-shadow: 
+      0 0 10px rgba(156, 163, 175, 0.4),
+      0 0 20px rgba(156, 163, 175, 0.2);
   }
   
   /* Section title with underline */

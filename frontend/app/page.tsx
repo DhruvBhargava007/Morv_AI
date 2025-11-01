@@ -19,7 +19,6 @@ export default function MarketingLanding() {
       {/* Top Left Logo */}
       <div className="absolute top-6 left-8 z-50">
         <h1 className="text-3xl title-brand tracking-widest">MORV AI</h1>
-        <p className="text-xs text-[#60A5FA] mt-1 font-mono uppercase tracking-wider">Military CMMS System</p>
       </div>
 
       {/* Upper half - Old TV with video */}
