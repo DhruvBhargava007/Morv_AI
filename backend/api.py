@@ -59,7 +59,13 @@ except ImportError:
 app = Flask(__name__)
 CORS(app)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'tank_database.db')
+# Handle database path for both local and serverless (Vercel)
+if os.path.exists('/tmp'):  # Serverless environment (Vercel)
+    DB_PATH = os.path.join('/tmp', 'tank_database.db')
+    # In serverless, we may need to copy database on first run
+    # For now, use /tmp which is writable
+else:
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'tank_database.db')
 COMPONENT_IDS = ['eng-001', 'trn-001', 'hyd-001', 'sus-001', 'fcs-001', 'com-001']
 COMPONENT_NAMES = {
     'eng-001': 'Main Engine',
