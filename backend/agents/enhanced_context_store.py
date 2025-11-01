@@ -26,19 +26,49 @@ class EnhancedContextStore:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # Main context table (enhanced with metadata)
+        # Check if agent_context table exists and has the required columns
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS agent_context (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            namespace TEXT NOT NULL,
-            key TEXT NOT NULL,
-            value TEXT NOT NULL,
-            metadata TEXT,  -- JSON metadata
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            version INTEGER DEFAULT 1,
-            UNIQUE(namespace, key)
-        )
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='agent_context'
         """)
+        table_exists = cursor.fetchone() is not None
+        
+        if table_exists:
+            # Check if columns exist
+            cursor.execute("PRAGMA table_info(agent_context)")
+            columns = [row[1] for row in cursor.fetchall()]
+            
+            # Add metadata column if missing
+            if 'metadata' not in columns:
+                try:
+                    cursor.execute("ALTER TABLE agent_context ADD COLUMN metadata TEXT")
+                    print("✅ Added 'metadata' column to agent_context table")
+                except sqlite3.OperationalError as e:
+                    print(f"⚠️  Could not add metadata column: {e}")
+            
+            # Add version column if missing
+            if 'version' not in columns:
+                try:
+                    cursor.execute("ALTER TABLE agent_context ADD COLUMN version INTEGER DEFAULT 1")
+                    # Update existing rows
+                    cursor.execute("UPDATE agent_context SET version = 1 WHERE version IS NULL")
+                    print("✅ Added 'version' column to agent_context table")
+                except sqlite3.OperationalError as e:
+                    print(f"⚠️  Could not add version column: {e}")
+        else:
+            # Create table with all columns if it doesn't exist
+            cursor.execute("""
+            CREATE TABLE agent_context (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                namespace TEXT NOT NULL,
+                key TEXT NOT NULL,
+                value TEXT NOT NULL,
+                metadata TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                version INTEGER DEFAULT 1,
+                UNIQUE(namespace, key)
+            )
+            """)
         
         # Historical context (keep history of changes)
         cursor.execute("""
@@ -131,28 +161,58 @@ class EnhancedContextStore:
     
     def store(self, namespace: str, key: str, value: str, metadata: Dict = None):
         """Store context data with optional metadata"""
+        # Ensure tables are up to date
+        self._ensure_tables()
+        
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # Get current version for history
-        cursor.execute("SELECT version FROM agent_context WHERE namespace = ? AND key = ?", (namespace, key))
-        row = cursor.fetchone()
-        current_version = (row[0] if row else 0) + 1
+        # Check if columns exist (handle old schema)
+        cursor.execute("PRAGMA table_info(agent_context)")
+        columns = [row[1] for row in cursor.fetchall()]
+        has_version = 'version' in columns
+        has_metadata = 'metadata' in columns
+        
+        # Get current version for history (if column exists)
+        if has_version:
+            cursor.execute("SELECT version FROM agent_context WHERE namespace = ? AND key = ?", (namespace, key))
+            row = cursor.fetchone()
+            current_version = (row[0] if row else 0) + 1
+        else:
+            current_version = 1
         
         # Save to history if updating existing
-        if row:
-            cursor.execute("""
-                INSERT INTO context_history (namespace, key, value, metadata, timestamp)
-                SELECT namespace, key, value, metadata, timestamp FROM agent_context
-                WHERE namespace = ? AND key = ?
-            """, (namespace, key))
+        if has_version:
+            cursor.execute("SELECT id FROM agent_context WHERE namespace = ? AND key = ?", (namespace, key))
+            existing = cursor.fetchone()
+            if existing:
+                cursor.execute("""
+                    INSERT INTO context_history (namespace, key, value, metadata, timestamp)
+                    SELECT namespace, key, value, metadata, timestamp FROM agent_context
+                    WHERE namespace = ? AND key = ?
+                """, (namespace, key))
         
-        # Store/update
+        # Store/update - handle both old and new schema
         metadata_json = json.dumps(metadata) if metadata else None
-        cursor.execute("""
-            INSERT OR REPLACE INTO agent_context (namespace, key, value, metadata, timestamp, version)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (namespace, key, value, metadata_json, datetime.now().isoformat(), current_version))
+        
+        if has_version and has_metadata:
+            # New schema with both columns
+            cursor.execute("""
+                INSERT OR REPLACE INTO agent_context (namespace, key, value, metadata, timestamp, version)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (namespace, key, value, metadata_json, datetime.now().isoformat(), current_version))
+        elif has_metadata:
+            # Has metadata but no version
+            cursor.execute("""
+                INSERT OR REPLACE INTO agent_context (namespace, key, value, metadata, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            """, (namespace, key, value, metadata_json, datetime.now().isoformat()))
+        else:
+            # Old schema - no metadata, no version
+            cursor.execute("""
+                INSERT OR REPLACE INTO agent_context (namespace, key, value, timestamp)
+                VALUES (?, ?, ?, ?)
+            """, (namespace, key, value, datetime.now().isoformat()))
         
         conn.commit()
         conn.close()

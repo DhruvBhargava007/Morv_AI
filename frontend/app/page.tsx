@@ -147,10 +147,10 @@ export default function MarketingLanding() {
       <div className="absolute bottom-0 left-0 right-0 h-[45%] flex flex-col items-center justify-start p-8 pt-16 space-y-12">
         {/* Catchphrase */}
         <div className="text-center space-y-4 w-full">
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight font-sans title-gradient-primary">
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight font-sans text-[#9CA3AF]">
             Maximum readiness.
           </h1>
-          <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight font-sans title-gradient-secondary">
+          <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight font-sans text-[#9CA3AF]">
             Zero downtime.
           </h2>
         </div>

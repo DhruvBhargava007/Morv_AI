@@ -24,9 +24,36 @@ from health_engine import compute_health_index, compute_readiness_score
 try:
     from agents.supervisor import Supervisor
     from agents.config import OPENAI_API_KEY, HYPERSPELL_API_KEY
+    # Use EnhancedContextStore for better Hyperspell integration
+    try:
+        from agents.enhanced_context_store import EnhancedContextStore
+        ENHANCED_HYPERSPELL_AVAILABLE = True
+    except ImportError:
+        from agents.context_store import SimpleContextStore as EnhancedContextStore
+        ENHANCED_HYPERSPELL_AVAILABLE = False
+    
+    # Try to use Hyperspell Cloud if available and enabled
+    USE_HYPERSPELL_CLOUD = os.getenv('USE_HYPERSPELL_CLOUD', 'false').lower() == 'true'
+    HYPERSPELL_CLOUD_AVAILABLE = False
+    HyperspellCloudClient = None
+    
+    if USE_HYPERSPELL_CLOUD and HYPERSPELL_API_KEY:
+        try:
+            from agents.hyperspell_cloud_client import HyperspellCloudClient
+            # Test connection
+            test_client = HyperspellCloudClient(api_key=HYPERSPELL_API_KEY)
+            HYPERSPELL_CLOUD_AVAILABLE = True
+            print("✅ Hyperspell Cloud service enabled")
+        except Exception as e:
+            print(f"⚠️  Hyperspell Cloud unavailable: {e}. Using local storage.")
+            HYPERSPELL_CLOUD_AVAILABLE = False
+    
     AGENTS_AVAILABLE = True
 except ImportError:
     AGENTS_AVAILABLE = False
+    ENHANCED_HYPERSPELL_AVAILABLE = False
+    HYPERSPELL_CLOUD_AVAILABLE = False
+    USE_HYPERSPELL_CLOUD = False
     print("⚠️  Agents not available - using rule-based fallback")
 
 app = Flask(__name__)
@@ -42,6 +69,21 @@ COMPONENT_NAMES = {
     'fcs-001': 'Fire Control System',
     'com-001': 'Communications Array'
 }
+
+
+def get_hyperspell_instance():
+    """
+    Get Hyperspell instance - uses cloud if available, otherwise local
+    Returns instance that matches EnhancedContextStore interface
+    """
+    if HYPERSPELL_CLOUD_AVAILABLE and HyperspellCloudClient and USE_HYPERSPELL_CLOUD:
+        try:
+            return HyperspellCloudClient(api_key=HYPERSPELL_API_KEY)
+        except:
+            # Fallback to local if cloud fails
+            return EnhancedContextStore()
+    else:
+        return EnhancedContextStore()
 
 
 def get_db_connection():
@@ -307,26 +349,68 @@ def get_predictions_v2():
     # Try to get from context store (agent results) first
     if AGENTS_AVAILABLE:
         try:
-            from agents.context_store import SimpleContextStore
-            
-            hyperspell = SimpleContextStore()
+            hyperspell = get_hyperspell_instance()
             namespace = f"tank_{tank_id}"
             
             # Get health predictions from context store
             health_context = hyperspell.retrieve(namespace, 'health_predictions')
+            
+            # Also get learned patterns and fleet insights for enhanced predictions
+            if ENHANCED_HYPERSPELL_AVAILABLE:
+                all_patterns = {}
+                all_insights = {}
+                all_lifecycles = {}
+                
+                for component_id in COMPONENT_IDS:
+                    # Get learned patterns for this component
+                    patterns = hyperspell.get_learned_patterns(
+                        component_id=component_id,
+                        namespace=namespace,
+                        min_confidence=0.6
+                    )
+                    if patterns:
+                        all_patterns[component_id] = patterns
+                    
+                    # Get fleet-wide insights
+                    insights = hyperspell.get_fleet_insights(component_id=component_id)
+                    if insights:
+                        all_insights[component_id] = insights
+                    
+                    # Get component lifecycle
+                    lifecycle = hyperspell.get_component_lifecycle(namespace, component_id)
+                    if lifecycle:
+                        all_lifecycles[component_id] = lifecycle
             
             if health_context:
                 if isinstance(health_context, str):
                     import json
                     health_context = json.loads(health_context)
                 
+                components_data = health_context.get('components', [])
+                
+                # Enhance components with learned patterns and insights
+                if ENHANCED_HYPERSPELL_AVAILABLE:
+                    for comp in components_data:
+                        comp_id = comp.get('id', '')
+                        if comp_id in all_patterns:
+                            comp['learnedPatterns'] = all_patterns[comp_id]
+                        if comp_id in all_insights:
+                            comp['fleetInsights'] = all_insights[comp_id]
+                        if comp_id in all_lifecycles:
+                            lifecycle = all_lifecycles[comp_id]
+                            comp['lifecycleTrend'] = {
+                                'degradationRate': lifecycle.get('degradation_rate'),
+                                'patternCount': len(lifecycle.get('patterns_detected', []))
+                            }
+                
                 # Return agent-generated predictions with AI explanations
                 return jsonify({
                     'tankId': tank_id,
                     'readinessScore': health_context.get('readiness_score', 0),
                     'lastUpdated': health_context.get('timestamp', datetime.now().isoformat()),
-                    'components': health_context.get('components', []),
-                    'source': 'agent'  # Indicates AI-generated
+                    'components': components_data,
+                    'source': 'agent',  # Indicates AI-generated
+                    'hyperspellEnhanced': ENHANCED_HYPERSPELL_AVAILABLE
                 })
         except Exception as e:
             print(f"Error retrieving from Hyperspell: {e}")
@@ -334,12 +418,22 @@ def get_predictions_v2():
     
     # Fallback: Direct calculation (no agents)
     components = []
+    hyperspell = None
+    namespace = f"tank_{tank_id}"
+    
+    # Initialize Hyperspell for pattern learning even without agents
+    if AGENTS_AVAILABLE:
+        try:
+            hyperspell = get_hyperspell_instance()
+        except:
+            hyperspell = None
+    
     for component_id in COMPONENT_IDS:
         try:
             health_result = compute_health_index(tank_id, component_id)
             
             if 'error' not in health_result:
-                components.append({
+                comp_data = {
                     'id': component_id,
                     'name': COMPONENT_NAMES.get(component_id, component_id),
                     'health': health_result['health'],
@@ -349,7 +443,50 @@ def get_predictions_v2():
                     'nextService': health_result.get('nextService', 'Unknown'),
                     'drivers': health_result.get('drivers', []),
                     'formula': health_result.get('formula', {})
-                })
+                }
+                
+                # Enhance with Hyperspell patterns if available
+                if hyperspell and ENHANCED_HYPERSPELL_AVAILABLE:
+                    # Get learned patterns
+                    patterns = hyperspell.get_learned_patterns(
+                        component_id=component_id,
+                        namespace=namespace,
+                        min_confidence=0.6
+                    )
+                    if patterns:
+                        comp_data['learnedPatterns'] = patterns
+                    
+                    # Get fleet insights
+                    insights = hyperspell.get_fleet_insights(component_id=component_id)
+                    if insights:
+                        comp_data['fleetInsights'] = insights
+                    
+                    # Update component lifecycle
+                    hyperspell.update_component_lifecycle(
+                        namespace=namespace,
+                        component_id=component_id,
+                        health=health_result['health'],
+                        rul_hours=health_result['rul_hours'],
+                        patterns=[d for d in health_result.get('drivers', [])]
+                    )
+                    
+                    # Detect anomalies and learn patterns
+                    if health_result['health'] < 50 or health_result['status'] == 'critical':
+                        # Learn critical health pattern
+                        hyperspell.learn_pattern(
+                            pattern_type='critical_health',
+                            namespace=namespace,
+                            component_id=component_id,
+                            pattern_data={
+                                'health': health_result['health'],
+                                'status': health_result['status'],
+                                'drivers': health_result.get('drivers', []),
+                                'rul_hours': health_result['rul_hours']
+                            },
+                            confidence=0.8
+                        )
+                
+                components.append(comp_data)
         except Exception as e:
             print(f"Error computing health for {component_id}: {e}")
             continue
@@ -365,7 +502,8 @@ def get_predictions_v2():
         'readinessScore': readiness_score,
         'lastUpdated': datetime.now().isoformat(),
         'components': components,
-        'source': 'direct'  # Indicates direct calculation
+        'source': 'direct',  # Indicates direct calculation
+        'hyperspellEnhanced': ENHANCED_HYPERSPELL_AVAILABLE if hyperspell else False
     })
 
 
@@ -383,9 +521,7 @@ def get_maintenance_v2():
     # Try to get from context store (agent results) first
     if AGENTS_AVAILABLE:
         try:
-            from agents.context_store import SimpleContextStore
-            
-            hyperspell = SimpleContextStore()
+            hyperspell = get_hyperspell_instance()
             namespace = f"tank_{tank_id}"
             
             # Get maintenance schedule from context store
@@ -404,13 +540,41 @@ def get_maintenance_v2():
                 else:
                     logistics_context = {'work_orders': [], 'personnel_assignments': []}
                 
+                # Get historical decisions for this tank (if enhanced)
+                historical_decisions = []
+                if ENHANCED_HYPERSPELL_AVAILABLE:
+                    try:
+                        conn = get_db_connection()
+                        cursor = conn.cursor()
+                        cursor.execute("""
+                            SELECT agent_name, decision_type, decision, reasoning, success_score, timestamp
+                            FROM agent_decisions
+                            WHERE namespace = ?
+                            ORDER BY timestamp DESC
+                            LIMIT 10
+                        """, (namespace,))
+                        for row in cursor.fetchall():
+                            historical_decisions.append({
+                                'agent': row[0],
+                                'type': row[1],
+                                'decision': json.loads(row[2]) if isinstance(row[2], str) else row[2],
+                                'reasoning': row[3],
+                                'successScore': row[4],
+                                'timestamp': row[5]
+                            })
+                        conn.close()
+                    except:
+                        pass
+                
                 # Return agent-generated schedule with AI reasoning
                 return jsonify({
                     'tankId': tank_id,
                     'events': schedule_context.get('events', []),
                     'workOrders': logistics_context.get('work_orders', []),
                     'personnelAssignments': logistics_context.get('personnel_assignments', []),
-                    'source': 'agent'  # Indicates AI-generated
+                    'source': 'agent',  # Indicates AI-generated
+                    'historicalDecisions': historical_decisions,
+                    'hyperspellEnhanced': ENHANCED_HYPERSPELL_AVAILABLE
                 })
         except Exception as e:
             print(f"Error retrieving from Hyperspell: {e}")
@@ -431,9 +595,18 @@ def get_maintenance_v2():
         except:
             continue
     
-    # Generate maintenance events based on rules
+        # Generate maintenance events based on rules
     events = []
     event_id = 1
+    
+    # Track decisions in Hyperspell if available
+    hyperspell = None
+    namespace = f"tank_{tank_id}"
+    if AGENTS_AVAILABLE:
+        try:
+            hyperspell = EnhancedContextStore()
+        except:
+            pass
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -473,6 +646,30 @@ def get_maintenance_v2():
         
         # Only create events for components needing attention
         if component['health'] < 80 or component['rul_hours'] < 336:
+            # Track this decision in Hyperspell if available
+            decision_id = None
+            if hyperspell and ENHANCED_HYPERSPELL_AVAILABLE:
+                try:
+                    decision_id = hyperspell.store_decision(
+                        namespace=namespace,
+                        agent_name='RuleBasedScheduler',
+                        decision_type='maintenance_priority',
+                        input_context={
+                            'component_id': component['id'],
+                            'health': component['health'],
+                            'rul_hours': component['rul_hours'],
+                            'status': component['status']
+                        },
+                        decision={
+                            'priority': priority,
+                            'type': event_type,
+                            'scheduled_date': scheduled_date.isoformat()
+                        },
+                        reasoning=f"Health: {component['health']}%, RUL: {component['rul_hours']}h, Status: {component['status']}"
+                    )
+                except Exception as e:
+                    print(f"Error tracking decision in Hyperspell: {e}")
+            
             events.append({
                 'id': f'mnt-{event_id:03d}',
                 'date': scheduled_date.strftime('%Y-%m-%d'),
@@ -480,7 +677,8 @@ def get_maintenance_v2():
                 'component': component['id'],
                 'description': f"{component['id']} maintenance - Health: {component['health']}%, RUL: {component['rul_hours']}h",
                 'status': 'pending',
-                'priority': priority
+                'priority': priority,
+                'decisionId': decision_id  # For tracking outcomes later
             })
             event_id += 1
     
@@ -491,7 +689,8 @@ def get_maintenance_v2():
         'events': events,
         'workOrders': [],
         'personnelAssignments': [],
-        'source': 'direct'  # Indicates rule-based
+        'source': 'direct',  # Indicates rule-based
+        'hyperspellEnhanced': ENHANCED_HYPERSPELL_AVAILABLE if hyperspell else False
     })
 
 
@@ -559,8 +758,7 @@ def store_repair_context():
         
         # Store in context store
         if AGENTS_AVAILABLE:
-            from agents.context_store import SimpleContextStore
-            context_store = SimpleContextStore()
+            context_store = get_hyperspell_instance()
             namespace = f"repair_{component_id}"
             
             # Store different context pieces
@@ -604,8 +802,7 @@ def get_repair_context(component_id: str):
     """
     try:
         if AGENTS_AVAILABLE:
-            from agents.context_store import SimpleContextStore
-            context_store = SimpleContextStore()
+            context_store = get_hyperspell_instance()
             namespace = f"repair_{component_id}"
             
             # Retrieve all context pieces
@@ -875,6 +1072,247 @@ def get_health_scores(tank_id):
         
     except Exception as e:
         return jsonify({'error': f'Failed to get health scores: {str(e)}'}), 500
+
+
+@app.route('/api/hyperspell/patterns', methods=['GET'])
+def get_learned_patterns():
+    """
+    Get learned patterns from Hyperspell for a component or tank
+    """
+    if not AGENTS_AVAILABLE or not ENHANCED_HYPERSPELL_AVAILABLE:
+        return jsonify({'error': 'Enhanced Hyperspell not available'}), 503
+    
+    try:
+        tank_id = request.args.get('tank_id')
+        component_id = request.args.get('component_id')
+        pattern_type = request.args.get('pattern_type')  # Optional filter
+        min_confidence = float(request.args.get('min_confidence', 0.6))
+        
+        store = get_hyperspell_instance()
+        namespace = f"tank_{tank_id}" if tank_id else None
+        
+        if component_id:
+            patterns = store.get_learned_patterns(
+                component_id=component_id,
+                namespace=namespace,
+                pattern_type=pattern_type,
+                min_confidence=min_confidence
+            )
+            return jsonify({
+                'component_id': component_id,
+                'patterns': patterns,
+                'count': len(patterns)
+            })
+        else:
+            # Get patterns for all components
+            all_patterns = {}
+            for comp_id in COMPONENT_IDS:
+                patterns = store.get_learned_patterns(
+                    component_id=comp_id,
+                    namespace=namespace,
+                    pattern_type=pattern_type,
+                    min_confidence=min_confidence
+                )
+                if patterns:
+                    all_patterns[comp_id] = patterns
+            
+            return jsonify({
+                'patterns': all_patterns,
+                'total_count': sum(len(p) for p in all_patterns.values())
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/hyperspell/fleet-insights', methods=['GET'])
+def get_fleet_insights():
+    """
+    Get fleet-wide insights from Hyperspell
+    """
+    if not AGENTS_AVAILABLE or not ENHANCED_HYPERSPELL_AVAILABLE:
+        return jsonify({'error': 'Enhanced Hyperspell not available'}), 503
+    
+    try:
+        component_id = request.args.get('component_id')
+        insight_type = request.args.get('insight_type')  # Optional filter
+        
+        store = get_hyperspell_instance()
+        
+        if component_id:
+            insights = store.get_fleet_insights(component_id=component_id, insight_type=insight_type)
+            return jsonify({
+                'component_id': component_id,
+                'insights': insights,
+                'count': len(insights)
+            })
+        else:
+            # Get insights for all components
+            all_insights = {}
+            for comp_id in COMPONENT_IDS:
+                insights = store.get_fleet_insights(component_id=comp_id, insight_type=insight_type)
+                if insights:
+                    all_insights[comp_id] = insights
+            
+            return jsonify({
+                'insights': all_insights,
+                'total_count': sum(len(i) for i in all_insights.values())
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/hyperspell/lifecycle/<tank_id>/<component_id>', methods=['GET'])
+def get_component_lifecycle(tank_id: str, component_id: str):
+    """
+    Get component lifecycle tracking data
+    """
+    if not AGENTS_AVAILABLE or not ENHANCED_HYPERSPELL_AVAILABLE:
+        return jsonify({'error': 'Enhanced Hyperspell not available'}), 503
+    
+    try:
+        store = get_hyperspell_instance()
+        namespace = f"tank_{tank_id}"
+        
+        lifecycle = store.get_component_lifecycle(namespace, component_id)
+        
+        if lifecycle:
+            return jsonify({
+                'tank_id': tank_id,
+                'component_id': component_id,
+                'lifecycle': lifecycle
+            })
+        else:
+            return jsonify({
+                'tank_id': tank_id,
+                'component_id': component_id,
+                'lifecycle': None,
+                'message': 'No lifecycle data available yet'
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/hyperspell/decisions', methods=['GET'])
+def get_historical_decisions():
+    """
+    Get historical agent decisions with outcomes
+    """
+    if not AGENTS_AVAILABLE or not ENHANCED_HYPERSPELL_AVAILABLE:
+        return jsonify({'error': 'Enhanced Hyperspell not available'}), 503
+    
+    try:
+        tank_id = request.args.get('tank_id')
+        agent_name = request.args.get('agent_name')  # Optional filter
+        decision_type = request.args.get('decision_type')  # Optional filter
+        limit = int(request.args.get('limit', 20))
+        
+        store = get_hyperspell_instance()
+        namespace = f"tank_{tank_id}" if tank_id else None
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT id, namespace, agent_name, decision_type, input_context, 
+                   decision, reasoning, outcome, success_score, timestamp
+            FROM agent_decisions
+            WHERE 1=1
+        """
+        params = []
+        
+        if namespace:
+            query += " AND namespace = ?"
+            params.append(namespace)
+        
+        if agent_name:
+            query += " AND agent_name = ?"
+            params.append(agent_name)
+        
+        if decision_type:
+            query += " AND decision_type = ?"
+            params.append(decision_type)
+        
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
+        
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        conn.close()
+        
+        decisions = []
+        for row in rows:
+            decisions.append({
+                'id': row[0],
+                'namespace': row[1],
+                'agent': row[2],
+                'type': row[3],
+                'inputContext': json.loads(row[4]) if row[4] else None,
+                'decision': json.loads(row[5]) if row[5] else None,
+                'reasoning': row[6],
+                'outcome': json.loads(row[7]) if row[7] else None,
+                'successScore': row[8],
+                'timestamp': row[9]
+            })
+        
+        return jsonify({
+            'decisions': decisions,
+            'count': len(decisions)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/hyperspell/decision/<decision_id>/outcome', methods=['POST'])
+def update_decision_outcome(decision_id: int):
+    """
+    Update a decision with its outcome (for learning)
+    """
+    if not AGENTS_AVAILABLE or not ENHANCED_HYPERSPELL_AVAILABLE:
+        return jsonify({'error': 'Enhanced Hyperspell not available'}), 503
+    
+    try:
+        data = request.get_json()
+        outcome = data.get('outcome', {})
+        success_score = float(data.get('success_score', 0.5))
+        
+        store = get_hyperspell_instance()
+        store.update_decision_outcome(decision_id, outcome, success_score)
+        
+        return jsonify({
+            'status': 'success',
+            'decision_id': decision_id,
+            'message': 'Outcome recorded'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/hyperspell/context/<tank_id>', methods=['GET'])
+def get_aggregated_context(tank_id: str):
+    """
+    Get all aggregated context for a tank (patterns, lifecycles, decisions, insights)
+    """
+    if not AGENTS_AVAILABLE or not ENHANCED_HYPERSPELL_AVAILABLE:
+        return jsonify({'error': 'Enhanced Hyperspell not available'}), 503
+    
+    try:
+        store = get_hyperspell_instance()
+        namespace = f"tank_{tank_id}"
+        
+        aggregated = store.aggregate_context_for_ai(namespace)
+        
+        return jsonify({
+            'tank_id': tank_id,
+            'context': aggregated
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/part-info', methods=['GET'])
