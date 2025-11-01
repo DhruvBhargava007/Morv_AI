@@ -194,12 +194,8 @@ export default function RepairPage({ params }: RepairPageProps) {
           <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-slate-100 mb-2">
-                  Component Repair Workflow
-                </h1>
-                <p className="text-slate-400 mb-4">
-                  AI-driven repair recommendations and execution
-                </p>
+                <h1 className="text-3xl title-brand mb-1">COMPONENT REPAIR WORKFLOW</h1>
+                <p className="text-[#60A5FA] text-xs mt-0.5 font-mono uppercase tracking-wider">AI-driven repair recommendations and execution</p>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>

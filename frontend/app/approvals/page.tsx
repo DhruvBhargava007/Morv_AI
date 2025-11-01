@@ -180,10 +180,10 @@ export default function ApprovalsPage() {
 
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-100 mb-1">
+              <h1 className="text-4xl title-gradient-primary mb-1 font-mono uppercase tracking-wider font-bold">
                 Pending Approvals
               </h1>
-              <p className="text-slate-400">
+              <p className="text-[#60A5FA] font-mono uppercase tracking-wider text-sm">
                 Review and approve work orders, transfers, and assignments
               </p>
             </div>

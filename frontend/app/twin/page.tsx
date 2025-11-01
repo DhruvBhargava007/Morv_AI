@@ -228,14 +228,22 @@ export default function DigitalTwinPage() {
   };
 
   return (
-    <div className="w-full h-screen bg-gray-900 relative overflow-hidden">
+    <div className="w-full h-screen bg-[#0D1117] relative overflow-hidden">
+      {/* Grid overlay */}
+      <div className="absolute inset-0 bg-grid-overlay opacity-40 pointer-events-none" />
+      
+      {/* Radial blue glow accent */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-radial from-[#3B82F6]/10 via-transparent to-transparent pointer-events-none blur-3xl" style={{
+        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%)'
+      }} />
+      
       {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-40 bg-black/60 backdrop-blur-sm border-b border-gray-800 p-4">
+      <header className="absolute top-0 left-0 right-0 z-40 bg-[#161B22]/90 backdrop-blur-sm border-b border-[#3B82F6]/30 p-4 shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-white">Morv AI</h1>
-              <p className="text-gray-400 text-xs mt-0.5">Military CMMS System</p>
+              <h1 className="text-3xl title-brand">MORV AI</h1>
+              <p className="text-[#60A5FA] text-xs mt-0.5 font-mono uppercase tracking-wider">Military CMMS System</p>
             </div>
             <InventoryDropdown 
               selectedTank={currentTank}
@@ -246,14 +254,14 @@ export default function DigitalTwinPage() {
             {/* Run Digital Pipeline Button */}
             <button
               onClick={handleRunAIPipeline}
-              className="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white font-medium rounded-md border border-gray-700 hover:border-gray-600 transition-colors duration-200 flex items-center gap-2 text-sm"
+              className="btn-military px-6 py-2.5 text-sm flex items-center gap-2"
             >
               <Play className="w-4 h-4" />
               Run Digital Pipeline
             </button>
             <div className="text-right">
-              <div className="text-white text-xs mb-0.5">Vehicle: {currentTank.vehicleId}</div>
-              <div className="text-green-400 text-xs">● Operational</div>
+              <div className="text-white text-xs mb-0.5 font-sans">Vehicle: {currentTank.vehicleId}</div>
+              <div className="status-operational text-xs font-sans font-semibold">● Operational</div>
             </div>
           </div>
         </div>
@@ -262,10 +270,10 @@ export default function DigitalTwinPage() {
       {/* 4-Quadrant Layout */}
       <div className="w-full h-full pt-16 grid grid-cols-2 grid-rows-2">
         {/* Top Left Quadrant - 3D Scene */}
-        <div className="relative border-r border-b border-gray-800">
+        <div className="relative border-r border-b border-white/8">
           {/* Part selector buttons overlay */}
-          <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm border border-gray-800 rounded-lg px-3 py-2">
-            <p className="text-gray-300 text-xs mb-2">
+          <div className="absolute top-2 left-2 z-10 card-military backdrop-blur-sm px-3 py-2">
+            <p className="text-white text-xs mb-2 font-sans">
               Hover to highlight • Click for details
             </p>
             <div className="flex flex-wrap gap-1">
@@ -273,10 +281,10 @@ export default function DigitalTwinPage() {
                 <button
                   key={part}
                   onClick={() => handlePartClick(part)}
-                  className={`px-2 py-1 text-xs rounded border transition-colors ${
+                  className={`px-2 py-1 text-xs rounded-2xl border transition-all font-sans ${
                     index === currentPartIndex
-                      ? 'bg-blue-500/30 border-blue-500 text-blue-300'
-                      : 'bg-gray-800/50 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                      ? 'bg-gradient-to-r from-[#3B82F6]/30 to-[#2563EB]/20 border-[#3B82F6]/60 text-[#60A5FA] accent-glow'
+                      : 'bg-[#21262D] border-[#3B82F6]/10 text-[#8B949E] hover:border-[#3B82F6]/40 hover:text-[#60A5FA] hover:bg-[#3B82F6]/10'
                   }`}
                 >
                   {part.charAt(0).toUpperCase() + part.slice(1)}

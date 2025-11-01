@@ -79,10 +79,10 @@ const InfoDrawer: React.FC<InfoDrawerProps> = ({ selectedPart, isOpen, onClose, 
   if (!isAlwaysVisible && (!isOpen || !selectedPart)) return null;
 
   return (
-    <div className="h-full w-full bg-gray-900/95 backdrop-blur-sm border border-gray-800 shadow-2xl overflow-y-auto">
+    <div className="h-full w-full card-military backdrop-blur-sm shadow-2xl overflow-y-auto">
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">Part Details</h2>
+          <h2 className="text-2xl title-section font-mono uppercase tracking-wider">Part Details</h2>
           {!isAlwaysVisible && (
             <button
               onClick={onClose}
@@ -108,19 +108,19 @@ const InfoDrawer: React.FC<InfoDrawerProps> = ({ selectedPart, isOpen, onClose, 
         ) : isDatabaseData ? (
           <>
             <div className="mb-5">
-              <h3 className="text-lg font-semibold text-white mb-2 capitalize">{selectedPart.partName || selectedPart.name}</h3>
-              <p className="text-gray-400 text-sm mb-3">{selectedPart.partData?.description}</p>
+              <h3 className="text-xl font-bold title-gradient-primary mb-2 capitalize font-mono uppercase">{selectedPart.partName || selectedPart.name}</h3>
+              <p className="text-[#8B949E] text-sm mb-3 font-sans">{selectedPart.partData?.description}</p>
             </div>
 
             {selectedPart.partData?.specifications && Object.keys(selectedPart.partData.specifications).length > 0 && (
               <div className="mb-5">
-                <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase">Specifications</h4>
+                <h4 className="text-xs font-semibold text-[#60A5FA] mb-3 uppercase font-sans">Specifications</h4>
                 <div className="space-y-2">
                   {Object.entries(selectedPart.partData.specifications).map(([key, value]) => (
-                    <div key={key} className="p-2 bg-gray-800/50 rounded border border-gray-700/50">
+                    <div key={key} className="p-3 bg-[#21262D]/60 rounded-2xl border border-[#3B82F6]/20 hover:border-[#3B82F6]/40 transition-all">
                       <div className="flex justify-between items-start">
-                        <span className="text-gray-400 text-xs">{formatFieldName(key)}:</span>
-                        <span className="text-white text-xs font-medium text-right ml-2">
+                        <span className="text-[#8B949E] text-xs font-sans">{formatFieldName(key)}:</span>
+                        <span className="text-[#60A5FA] text-xs font-semibold text-right ml-2 font-mono">
                           {formatFieldValue(key, value)}
                         </span>
                       </div>
@@ -132,15 +132,15 @@ const InfoDrawer: React.FC<InfoDrawerProps> = ({ selectedPart, isOpen, onClose, 
 
             {selectedPart.maintenanceData && Object.keys(selectedPart.maintenanceData).length > 0 && (
               <div>
-                <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase">Maintenance Requirements</h4>
+                <h4 className="text-xs font-semibold text-[#10B981] mb-3 uppercase font-sans">Maintenance Requirements</h4>
                 <div className="space-y-2">
                   {Object.entries(selectedPart.maintenanceData)
                     .filter(([key, value]) => value !== null && value !== undefined)
                     .map(([key, value]) => (
-                      <div key={key} className="p-2 bg-gray-800/50 rounded border border-gray-700/50">
+                      <div key={key} className="p-3 bg-[#21262D]/60 rounded-2xl border border-[#10B981]/20 hover:border-[#10B981]/40 transition-all">
                         <div className="flex justify-between items-start">
-                          <span className="text-gray-400 text-xs">{formatFieldName(key)}:</span>
-                          <span className="text-white text-xs font-medium text-right ml-2">
+                          <span className="text-[#8B949E] text-xs font-sans">{formatFieldName(key)}:</span>
+                          <span className="text-[#34D399] text-xs font-semibold text-right ml-2 font-mono">
                             {formatFieldValue(key, value)}
                           </span>
                         </div>
@@ -153,8 +153,8 @@ const InfoDrawer: React.FC<InfoDrawerProps> = ({ selectedPart, isOpen, onClose, 
         ) : (
           <>
             <div className="mb-5">
-              <h3 className="text-lg font-semibold text-white mb-2">{selectedPart.name}</h3>
-              <p className="text-gray-400 text-sm mb-3">{selectedPart.description}</p>
+              <h3 className="text-xl font-bold title-gradient-primary mb-2 font-mono uppercase">{selectedPart.name}</h3>
+              <p className="text-[#8B949E] text-sm mb-3 font-sans">{selectedPart.description}</p>
               
               <div className="inline-block px-3 py-1 rounded border bg-green-500/20 text-green-400 border-green-500/50 text-xs font-medium">
                 OPERATIONAL

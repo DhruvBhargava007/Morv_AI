@@ -248,11 +248,11 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
   };
 
   return (
-    <div className="h-full w-full bg-gray-900/60 backdrop-blur-sm border border-gray-800 p-4 overflow-y-auto">
+    <div className="h-full w-full card-military backdrop-blur-sm p-4 overflow-y-auto">
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold text-white mb-2">Spec Changer</h3>
-          <p className="text-gray-400 text-sm mb-4">
+          <h3 className="text-2xl title-gradient-secondary mb-2 font-mono uppercase tracking-wider font-bold">Spec Changer</h3>
+          <p className="text-[#8B949E] text-sm mb-4 font-sans">
             Record or type recommendations for {selectedPart?.name || selectedPart?.partName || 'selected part'}
           </p>
         </div>
@@ -263,7 +263,7 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
             {!isRecording ? (
               <button
                 onClick={handleStartRecording}
-                className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white font-medium rounded-md border border-gray-700 hover:border-gray-600 transition-colors duration-200 flex items-center justify-center gap-2"
+                className="btn-military flex-1 px-4 py-3 flex items-center justify-center gap-2"
               >
                 <Mic className="w-5 h-5" />
                 Start Voice Recording
@@ -271,7 +271,7 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
             ) : (
               <button
                 onClick={handleStopRecording}
-                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-md border border-gray-600 hover:border-gray-500 transition-colors duration-200 flex items-center justify-center gap-2"
+                className="btn-military flex-1 px-4 py-3 bg-[#30363D] flex items-center justify-center gap-2"
               >
                 <Square className="w-5 h-5" />
                 Stop Recording
@@ -280,7 +280,7 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
             
           <button
               onClick={() => setShowTextInput(!showTextInput)}
-            className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white font-medium rounded-md border border-gray-700 hover:border-gray-600 transition-colors duration-200 flex items-center justify-center gap-2"
+            className="btn-military flex-1 px-4 py-3 flex items-center justify-center gap-2"
           >
               <Type className="w-5 h-5" />
               {showTextInput ? 'Hide' : 'Type'} Text

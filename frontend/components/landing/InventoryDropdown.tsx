@@ -35,11 +35,11 @@ const InventoryDropdown: React.FC<InventoryDropdownProps> = ({ selectedTank, onT
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gray-800/80 border border-gray-700 rounded px-3 py-2 text-white text-sm font-medium hover:bg-gray-700 transition-colors flex items-center gap-2 min-w-[140px]"
+        className="card-military border-[#3B82F6]/30 hover:border-[#3B82F6]/60 px-3 py-2 text-white text-sm font-medium transition-all flex items-center gap-2 min-w-[140px] hover:shadow-[0_0_12px_rgba(59,130,246,0.3)]"
       >
-        <span>Inventory</span>
+        <span className="font-sans">Inventory</span>
         <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 transition-transform text-[#60A5FA] ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -49,7 +49,7 @@ const InventoryDropdown: React.FC<InventoryDropdownProps> = ({ selectedTank, onT
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-gray-900 border border-gray-700 rounded shadow-lg overflow-hidden min-w-[180px] z-50">
+        <div className="absolute top-full left-0 mt-1 card-military border-[#3B82F6]/30 shadow-[0_8px_24px_rgba(0,0,0,0.5)] overflow-hidden min-w-[180px] z-50 accent-glow">
           {tankOptions.map((tank) => (
             <button
               key={tank.id}
@@ -59,16 +59,16 @@ const InventoryDropdown: React.FC<InventoryDropdownProps> = ({ selectedTank, onT
                   setIsOpen(false);
                 }
               }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between ${
+              className={`w-full text-left px-3 py-2 text-sm transition-all flex items-center justify-between font-sans ${
                 selectedTank?.id === tank.id
-                  ? 'bg-blue-600/20 text-blue-300 border-l-2 border-blue-500'
-                  : 'text-gray-300 hover:bg-gray-800'
+                  ? 'bg-gradient-to-r from-[#3B82F6]/30 to-[#2563EB]/20 text-[#60A5FA] border-l-2 border-[#3B82F6] shadow-[0_0_8px_rgba(59,130,246,0.3)]'
+                  : 'text-[#8B949E] hover:bg-[#3B82F6]/10 hover:text-[#60A5FA]'
               } ${!tank.modelPath ? 'opacity-40 cursor-not-allowed' : ''}`}
               disabled={!tank.modelPath}
             >
               <span className="font-normal">{tank.name}</span>
               {selectedTank?.id === tank.id && (
-                <span className="text-blue-400 text-xs">●</span>
+                <span className="text-[#60A5FA] text-xs font-semibold">●</span>
               )}
             </button>
           ))}
