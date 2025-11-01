@@ -187,13 +187,13 @@ export default function DigitalTwinPage() {
             />
           </div>
           <div className="flex items-center gap-4">
-            {/* Run AI Agent Pipeline Button */}
+            {/* Run Digital Pipeline Button */}
             <button
               onClick={handleRunAIPipeline}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2 border border-blue-400/30"
+              className="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white font-medium rounded-md border border-gray-700 hover:border-gray-600 transition-colors duration-200 flex items-center gap-2 text-sm"
             >
-              <Play className="w-5 h-5" />
-              Run AI Agent Pipeline on Digital Twin
+              <Play className="w-4 h-4" />
+              Run Digital Pipeline
             </button>
             <div className="text-right">
               <div className="text-white text-xs mb-0.5">Vehicle: {currentTank.vehicleId}</div>
