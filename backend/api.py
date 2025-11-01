@@ -714,6 +714,169 @@ def stream_repair_recommendation():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/health/upload', methods=['POST'])
+def upload_health_csv():
+    """Upload CSV file for health recalculation"""
+    try:
+        from utils.file_processor import validate_csv_file, parse_csv_by_category
+        
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Read file content
+        file_content = file.read()
+        filename = secure_filename(file.filename)
+        
+        # Validate CSV file
+        is_valid, detected_category, error_message, detected_columns = validate_csv_file(file_content, filename)
+        
+        if not is_valid:
+            return jsonify({
+                'error': error_message,
+                'detected_columns': detected_columns
+            }), 400
+        
+        # Store file temporarily
+        job_id = str(uuid.uuid4())
+        temp_dir = os.path.join(os.path.dirname(__file__), 'temp_uploads')
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        temp_file_path = os.path.join(temp_dir, f"{job_id}_{filename}")
+        with open(temp_file_path, 'wb') as f:
+            f.write(file_content)
+        
+        # Parse CSV
+        csv_content = file_content.decode('utf-8')
+        try:
+            csv_data = parse_csv_by_category(csv_content, detected_category)
+        except Exception as e:
+            return jsonify({'error': f'Failed to parse CSV: {str(e)}'}), 400
+        
+        return jsonify({
+            'job_id': job_id,
+            'detected_category': detected_category,
+            'filename': filename,
+            'rows': len(csv_data),
+            'columns': detected_columns,
+            'status': 'uploaded'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Upload failed: {str(e)}'}), 500
+
+
+@app.route('/api/health/recalculate', methods=['POST'])
+def recalculate_health():
+    """Trigger AI recalculation with uploaded CSV data"""
+    try:
+        from agents.health_adjustment_agent import HealthAdjustmentAgent
+        from utils.file_processor import parse_csv_by_category
+        
+        data = request.get_json()
+        tank_id = data.get('tank_id')
+        job_id = data.get('job_id')
+        detected_category = data.get('detected_category')
+        
+        if not tank_id or not job_id or not detected_category:
+            return jsonify({'error': 'tank_id, job_id, and detected_category are required'}), 400
+        
+        # Load uploaded file
+        temp_dir = os.path.join(os.path.dirname(__file__), 'temp_uploads')
+        temp_files = [f for f in os.listdir(temp_dir) if f.startswith(job_id)]
+        
+        if not temp_files:
+            return jsonify({'error': 'Uploaded file not found'}), 404
+        
+        temp_file_path = os.path.join(temp_dir, temp_files[0])
+        
+        # Read and parse CSV
+        with open(temp_file_path, 'r', encoding='utf-8') as f:
+            csv_content = f.read()
+        
+        csv_data = parse_csv_by_category(csv_content, detected_category)
+        
+        # Initialize agent
+        agent = HealthAdjustmentAgent(tank_id)
+        
+        # Process CSV and adjust health
+        result = agent.process_csv_and_adjust_health(csv_data, detected_category)
+        
+        # Clean up temp file
+        try:
+            os.remove(temp_file_path)
+        except:
+            pass
+        
+        # Format response
+        adjusted_scores = {}
+        for component_id, score_data in result['adjusted_scores'].items():
+            adjusted_scores[component_id] = {
+                'original_health': score_data['original_health'],
+                'adjusted_health': score_data['adjusted_health'],
+                'confidence': score_data['confidence'],
+                'reasoning': score_data['reasoning'],
+                'status': score_data['status'],
+                'has_adjustment': score_data['adjusted_health'] != score_data['original_health']
+            }
+        
+        return jsonify({
+            'tank_id': tank_id,
+            'category': detected_category,
+            'adjusted_scores': adjusted_scores,
+            'insights': result['insights'],
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Recalculation failed: {str(e)}'}), 500
+
+
+@app.route('/api/health/scores/<tank_id>', methods=['GET'])
+def get_health_scores(tank_id):
+    """Get current health scores (base + AI adjusted if available)"""
+    try:
+        from health_engine import compute_health_index
+        
+        # Get base scores for all components
+        component_ids = ['eng-001', 'trn-001', 'hyd-001', 'sus-001', 'fcs-001', 'com-001']
+        
+        scores = {}
+        for component_id in component_ids:
+            try:
+                health_data = compute_health_index(tank_id, component_id)
+                scores[component_id] = {
+                    'original_health': health_data.get('health', 50),
+                    'adjusted_health': None,  # Will be populated if AI adjustments exist
+                    'status': health_data.get('status', 'unknown'),
+                    'rul_hours': health_data.get('rul_hours', 0),
+                    'drivers': health_data.get('drivers', []),
+                    'has_ai_adjustment': False
+                }
+            except Exception as e:
+                scores[component_id] = {
+                    'original_health': 50,
+                    'adjusted_health': None,
+                    'status': 'unknown',
+                    'rul_hours': 0,
+                    'drivers': [],
+                    'has_ai_adjustment': False,
+                    'error': str(e)
+                }
+        
+        return jsonify({
+            'tank_id': tank_id,
+            'scores': scores,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to get health scores: {str(e)}'}), 500
+
+
 @app.route('/api/part-info', methods=['GET'])
 def get_part_info():
     """Get part specifications and maintenance data for a specific tank and part"""

@@ -25,19 +25,19 @@ export function LiveReasoningPanel({
   const [showAllUpdates, setShowAllUpdates] = useState(false);
 
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 90) return 'text-emerald-400';
-    if (confidence >= 80) return 'text-green-400';
-    if (confidence >= 70) return 'text-blue-400';
-    if (confidence >= 60) return 'text-amber-400';
-    return 'text-orange-400';
+    if (confidence >= 90) return 'text-slate-200';
+    if (confidence >= 80) return 'text-slate-300';
+    if (confidence >= 70) return 'text-slate-400';
+    if (confidence >= 60) return 'text-slate-500';
+    return 'text-slate-600';
   };
 
   const getConfidenceBg = (confidence: number) => {
-    if (confidence >= 90) return 'bg-emerald-500/20 border-emerald-500/30';
-    if (confidence >= 80) return 'bg-green-500/20 border-green-500/30';
-    if (confidence >= 70) return 'bg-blue-500/20 border-blue-500/30';
-    if (confidence >= 60) return 'bg-amber-500/20 border-amber-500/30';
-    return 'bg-orange-500/20 border-orange-500/30';
+    if (confidence >= 90) return 'bg-slate-800/50 border-slate-700/50';
+    if (confidence >= 80) return 'bg-slate-800/40 border-slate-700/40';
+    if (confidence >= 70) return 'bg-slate-800/30 border-slate-700/30';
+    if (confidence >= 60) return 'bg-slate-800/20 border-slate-700/20';
+    return 'bg-slate-800/10 border-slate-700/10';
   };
 
   const formatFieldName = (field: string): string => {
@@ -53,34 +53,34 @@ export function LiveReasoningPanel({
 
   if (error) {
     return (
-      <Card className="bg-red-950/50 border-red-500/30">
+      <Card className="bg-slate-900/95 border-slate-700/50">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-red-400" />
-              <CardTitle className="text-red-400">AI Analysis Error</CardTitle>
+              <Brain className="w-5 h-5 text-slate-500" />
+              <CardTitle className="text-slate-400">AI Analysis Error</CardTitle>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-red-300 text-sm">{error}</p>
+          <p className="text-slate-400 text-sm">{error}</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-gradient-to-br from-blue-950/50 to-slate-900 border-blue-500/30 transition-all duration-300">
+    <Card className="bg-slate-900/95 border-slate-700/50 transition-all duration-300">
       <CardHeader className="pb-3 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-blue-400" />
-            <CardTitle className="text-blue-400">AI Live Analysis</CardTitle>
+            <Brain className="w-5 h-5 text-slate-400" />
+            <CardTitle className="text-slate-200">AI Live Analysis</CardTitle>
             {isStreaming && (
-              <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+              <Loader2 className="w-4 h-4 text-slate-500 animate-spin" />
             )}
             {isConnected && !isStreaming && (
-              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
+              <Badge className="bg-slate-800/50 text-slate-400 border-slate-600/50 text-xs">
                 Connected
               </Badge>
             )}
@@ -113,8 +113,8 @@ export function LiveReasoningPanel({
 
           {isStreaming && updates.length === 0 && (
             <div className="text-center py-6">
-              <Loader2 className="w-12 h-12 text-blue-400 mx-auto mb-3 animate-spin" />
-              <p className="text-blue-300 text-sm font-semibold">
+              <Loader2 className="w-12 h-12 text-slate-500 mx-auto mb-3 animate-spin" />
+              <p className="text-slate-300 text-sm font-semibold">
                 Analyzing component data...
               </p>
               <p className="text-slate-500 text-xs mt-1">
@@ -127,10 +127,10 @@ export function LiveReasoningPanel({
             <>
               {/* Current Field Being Analyzed */}
               {isStreaming && latestUpdate && (
-                <div className="bg-blue-950/50 border border-blue-500/30 rounded-lg p-3 mb-3 animate-pulse">
+                <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3 mb-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
-                    <div className="text-sm font-semibold text-blue-300">
+                    <Loader2 className="w-4 h-4 text-slate-500 animate-spin" />
+                    <div className="text-sm font-semibold text-slate-300">
                       Currently analyzing: {formatFieldName(latestUpdate.field)}
                     </div>
                   </div>
@@ -144,7 +144,7 @@ export function LiveReasoningPanel({
                     key={`${update.field}-${idx}`}
                     className={`bg-slate-950/50 border rounded-lg p-3 transition-all duration-300 ${
                       idx === displayedUpdates.length - 1 && isStreaming
-                        ? 'border-blue-500/50 shadow-lg shadow-blue-500/10'
+                        ? 'border-slate-700/50 shadow-lg shadow-slate-900/10'
                         : 'border-slate-800'
                     }`}
                   >
@@ -167,11 +167,11 @@ export function LiveReasoningPanel({
                       </Badge>
                     </div>
 
-                    <div className="bg-slate-900/50 rounded px-3 py-2 border-l-2 border-blue-500/50">
-                      <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">
+                    <div className="bg-slate-900/50 rounded px-3 py-2 border-l-2 border-slate-700/50">
+                      <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">
                         Reasoning
                       </div>
-                      <p className="text-sm text-slate-300 leading-relaxed">
+                      <p className="text-sm text-slate-400 leading-relaxed">
                         {update.reasoning}
                       </p>
                     </div>
@@ -181,7 +181,7 @@ export function LiveReasoningPanel({
                 {updates.length > 3 && !showAllUpdates && (
                   <button
                     onClick={() => setShowAllUpdates(true)}
-                    className="w-full py-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                    className="w-full py-2 text-sm text-slate-400 hover:text-slate-300 transition-colors"
                   >
                     Show all {updates.length} updates
                   </button>
@@ -190,7 +190,7 @@ export function LiveReasoningPanel({
                 {showAllUpdates && updates.length > 3 && (
                   <button
                     onClick={() => setShowAllUpdates(false)}
-                    className="w-full py-2 text-sm text-slate-400 hover:text-slate-300 transition-colors"
+                    className="w-full py-2 text-sm text-slate-500 hover:text-slate-400 transition-colors"
                   >
                     Show less
                   </button>

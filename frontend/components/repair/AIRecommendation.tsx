@@ -24,21 +24,21 @@ export function AIRecommendation({ recommendation }: AIRecommendationProps) {
   };
 
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 90) return 'text-emerald-400';
-    if (confidence >= 80) return 'text-green-400';
-    if (confidence >= 70) return 'text-blue-400';
-    return 'text-amber-400';
+    if (confidence >= 90) return 'text-slate-200';
+    if (confidence >= 80) return 'text-slate-300';
+    if (confidence >= 70) return 'text-slate-400';
+    return 'text-slate-500';
   };
 
   return (
-    <Card className="bg-gradient-to-br from-emerald-950/50 to-slate-900 border-emerald-500/30">
+    <Card className="bg-slate-900/95 border-slate-700/50">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-emerald-400" />
-            <CardTitle className="text-emerald-400">AI Recommended Solution</CardTitle>
+            <Brain className="w-5 h-5 text-slate-400" />
+            <CardTitle className="text-slate-200">AI Recommended Solution</CardTitle>
           </div>
-          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+          <Badge className="bg-slate-800/50 text-slate-300 border-slate-600/50">
             <TrendingUp className="w-3 h-3 mr-1" />
             {recommendation.confidence}% Confidence
           </Badge>
@@ -46,8 +46,8 @@ export function AIRecommendation({ recommendation }: AIRecommendationProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <div className="text-sm font-semibold text-slate-300 mb-1">Recommended Action</div>
-          <div className="text-lg font-bold text-emerald-400">{getTypeLabel(recommendation.type)}</div>
+          <div className="text-sm font-semibold text-slate-400 mb-1">Recommended Action</div>
+          <div className="text-lg font-bold text-slate-100">{getTypeLabel(recommendation.type)}</div>
         </div>
 
         <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800">
@@ -62,8 +62,8 @@ export function AIRecommendation({ recommendation }: AIRecommendationProps) {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800">
             <div className="flex items-center gap-2 mb-1">
-              <Clock className="w-4 h-4 text-blue-400" />
-              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <Clock className="w-4 h-4 text-slate-500" />
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Est. Time
               </div>
             </div>
@@ -74,8 +74,8 @@ export function AIRecommendation({ recommendation }: AIRecommendationProps) {
 
           <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-800">
             <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="w-4 h-4 text-green-400" />
-              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <DollarSign className="w-4 h-4 text-slate-500" />
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Est. Cost
               </div>
             </div>

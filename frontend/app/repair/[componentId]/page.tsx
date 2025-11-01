@@ -103,7 +103,7 @@ export default function RepairPage({ params }: RepairPageProps) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-emerald-400 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-slate-500 animate-spin mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-slate-200 mb-2">
             Analyzing Repair Options
           </h2>
@@ -123,7 +123,7 @@ export default function RepairPage({ params }: RepairPageProps) {
           <p className="text-slate-400 mb-4">
             The requested component could not be found.
           </p>
-          <Button onClick={() => router.push('/')} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => router.push('/')} className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200">
             Return to Dashboard
           </Button>
         </div>
@@ -134,10 +134,10 @@ export default function RepairPage({ params }: RepairPageProps) {
   if (submitted) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Card className="bg-slate-900 border-emerald-500/50 max-w-md">
+        <Card className="bg-slate-900 border-slate-700/50 max-w-md">
           <CardContent className="pt-6 text-center">
-            <CheckCircle className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-emerald-400 mb-2">
+            <CheckCircle className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-slate-200 mb-2">
               {userRole === 'admin' ? 'Approved!' : 'Submitted!'}
             </h2>
             <p className="text-slate-300 mb-4">
@@ -156,22 +156,22 @@ export default function RepairPage({ params }: RepairPageProps) {
   }
 
   const getHealthColor = (health: number) => {
-    if (health >= 85) return 'text-green-400';
-    if (health >= 70) return 'text-blue-400';
-    if (health >= 50) return 'text-amber-400';
-    return 'text-red-400';
+    if (health >= 85) return 'text-slate-300';
+    if (health >= 70) return 'text-slate-400';
+    if (health >= 50) return 'text-slate-500';
+    return 'text-slate-600';
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'operational':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
+        return 'bg-slate-800/50 text-slate-300 border-slate-700/50';
       case 'degraded':
-        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+        return 'bg-slate-800/40 text-slate-400 border-slate-700/40';
       case 'maintenance_required':
-        return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+        return 'bg-slate-800/50 text-slate-500 border-slate-700/50';
       case 'critical':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
+        return 'bg-slate-900/70 text-slate-400 border-slate-600/50';
       default:
         return 'bg-slate-800 text-slate-400 border-slate-600';
     }
@@ -238,7 +238,7 @@ export default function RepairPage({ params }: RepairPageProps) {
                   </div>
                 </div>
               </div>
-              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-sm">
+              <Badge className="bg-slate-800/50 text-slate-300 border-slate-700/50 text-sm">
                 {userRole.toUpperCase()}
               </Badge>
             </div>
@@ -254,7 +254,7 @@ export default function RepairPage({ params }: RepairPageProps) {
 
         {/* Context Loaded Indicator */}
         {contextLoaded && (
-          <div className="mb-4 flex items-center gap-2 text-sm text-emerald-400">
+          <div className="mb-4 flex items-center gap-2 text-sm text-slate-400">
             <Database className="w-4 h-4" />
             <span>Repair context loaded - AI agents have full component history</span>
           </div>

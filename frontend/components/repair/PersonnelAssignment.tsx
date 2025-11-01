@@ -83,7 +83,7 @@ export function PersonnelAssignment({
   const isFieldLocked = (field: string) => lockedFields.has(field);
   const getFieldHighlight = (field: string) => {
     if (streamState.completedFields.has(field) && !isFieldLocked(field)) {
-      return 'ring-2 ring-blue-500/50 bg-blue-950/20';
+      return 'ring-1 ring-slate-600/50 bg-slate-900/30';
     }
     return '';
   };
@@ -118,23 +118,23 @@ export function PersonnelAssignment({
 
   const getAvailabilityIcon = (person: Personnel) => {
     if (person.availabilityStatus === 'available') {
-      return <CheckCircle2 className="w-4 h-4 text-green-400" />;
+      return <CheckCircle2 className="w-4 h-4 text-slate-400" />;
     }
-    return <XCircle className="w-4 h-4 text-red-400" />;
+    return <XCircle className="w-4 h-4 text-slate-600" />;
   };
 
   const getAvailabilityColor = (status: string) => {
     switch (status) {
       case 'available':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
+        return 'bg-slate-800/50 text-slate-300 border-slate-700/50';
       case 'assigned':
-        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+        return 'bg-slate-800/40 text-slate-400 border-slate-700/40';
       case 'on_leave':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
+        return 'bg-slate-900/70 text-slate-500 border-slate-600/50';
       case 'unavailable':
-        return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+        return 'bg-slate-900/80 text-slate-600 border-slate-700/50';
       default:
-        return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+        return 'bg-slate-800/50 text-slate-400 border-slate-600/50';
     }
   };
 
@@ -144,15 +144,15 @@ export function PersonnelAssignment({
   );
 
   return (
-    <Card className={`bg-slate-900 border-slate-700 ${isRecommended ? 'ring-2 ring-emerald-500/50' : ''}`}>
+    <Card className={`bg-slate-900 border-slate-700 ${isRecommended ? 'ring-1 ring-slate-600/50' : ''}`}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-400" />
+            <Users className="w-5 h-5 text-slate-400" />
             <CardTitle className="text-slate-100">Assign Personnel</CardTitle>
           </div>
           {isRecommended && (
-            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+            <Badge className="bg-slate-800/50 text-slate-300 border-slate-700/50">
               Recommended
             </Badge>
           )}
@@ -160,14 +160,14 @@ export function PersonnelAssignment({
         {!aiAssistEnabled && (
           <Button
             onClick={handleAIAssist}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+            className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
           >
             <Sparkles className="w-4 h-4 mr-2" />
             AI Assist - Auto-Fill Form
           </Button>
         )}
         {aiAssistEnabled && streamState.isStreaming && (
-          <div className="text-sm text-blue-400 text-center py-2">
+          <div className="text-sm text-slate-400 text-center py-2">
             <Sparkles className="w-4 h-4 inline mr-2 animate-pulse" />
             AI is analyzing and filling fields...
           </div>
@@ -182,7 +182,7 @@ export function PersonnelAssignment({
             placeholder="Search personnel by name or specialization..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-600"
           />
         </div>
 
@@ -194,7 +194,7 @@ export function PersonnelAssignment({
               onClick={() => person.availabilityStatus !== 'unavailable' && togglePersonnel(person.id)}
               className={`p-3 rounded-lg border transition-all cursor-pointer ${
                 selectedPersonnel.includes(person.id)
-                  ? 'bg-blue-950/50 border-blue-500/50'
+                  ? 'bg-slate-800/50 border-slate-600/50'
                   : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
               } ${person.availabilityStatus === 'unavailable' ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
@@ -228,7 +228,7 @@ export function PersonnelAssignment({
             onChange={(e) => setEstimatedHours(Number(e.target.value))}
             min="1"
             max="48"
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-600"
           />
         </div>
 
@@ -250,7 +250,7 @@ export function PersonnelAssignment({
         <Button
           onClick={handleSubmit}
           disabled={selectedPersonnel.length === 0}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {userRole === 'admin' ? 'Approve & Assign' : 'Submit for Approval'}
         </Button>

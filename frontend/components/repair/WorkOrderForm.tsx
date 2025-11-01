@@ -111,7 +111,7 @@ export function WorkOrderForm({
   const isFieldLocked = (field: string) => lockedFields.has(field);
   const getFieldHighlight = (field: string) => {
     if (streamState.completedFields.has(field) && !isFieldLocked(field)) {
-      return 'ring-2 ring-blue-500/50 bg-blue-950/20';
+      return 'ring-1 ring-slate-600/50 bg-slate-900/30';
     }
     return '';
   };
@@ -150,15 +150,15 @@ export function WorkOrderForm({
   };
 
   return (
-    <Card className={`bg-slate-900 border-slate-700 ${isRecommended ? 'ring-2 ring-emerald-500/50' : ''}`}>
+    <Card className={`bg-slate-900 border-slate-700 ${isRecommended ? 'ring-1 ring-slate-600/50' : ''}`}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-orange-400" />
+            <FileText className="w-5 h-5 text-slate-400" />
             <CardTitle className="text-slate-100">Work Order</CardTitle>
           </div>
           {isRecommended && (
-            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+            <Badge className="bg-slate-800/50 text-slate-300 border-slate-700/50">
               Recommended
             </Badge>
           )}
@@ -166,14 +166,14 @@ export function WorkOrderForm({
         {!aiAssistEnabled && (
           <Button
             onClick={handleAIAssist}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+            className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200"
           >
             <Sparkles className="w-4 h-4 mr-2" />
             AI Assist - Auto-Fill Form
           </Button>
         )}
         {aiAssistEnabled && streamState.isStreaming && (
-          <div className="text-sm text-blue-400 text-center py-2">
+          <div className="text-sm text-slate-400 text-center py-2">
             <Sparkles className="w-4 h-4 inline mr-2 animate-pulse" />
             AI is analyzing and filling fields...
           </div>
@@ -228,10 +228,10 @@ export function WorkOrderForm({
               onChange={(e) => setPartNumber(e.target.value)}
               placeholder="e.g., TRK-5589-A"
               disabled={isFieldLocked('partNumber')}
-              className={`w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono transition-all ${getFieldHighlight('partNumber')} ${isFieldLocked('partNumber') ? 'opacity-60 cursor-not-allowed' : ''}`}
+              className={`w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-600 font-mono transition-all ${getFieldHighlight('partNumber')} ${isFieldLocked('partNumber') ? 'opacity-60 cursor-not-allowed' : ''}`}
             />
             {aiAssistEnabled && getFieldReasoning('partNumber') && (
-              <div className="mt-1 text-xs text-blue-400 italic">
+              <div className="mt-1 text-xs text-slate-500 italic">
                 AI: {getFieldReasoning('partNumber')}
               </div>
             )}
@@ -245,7 +245,7 @@ export function WorkOrderForm({
               value={quantity}
               onChange={(e) => setQuantity(Number(e.target.value))}
               min="1"
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-600"
             />
           </div>
         </div>
@@ -337,7 +337,7 @@ export function WorkOrderForm({
               value={deliveryTimeline}
               onChange={(e) => setDeliveryTimeline(e.target.value)}
               placeholder="e.g., 3-5 days"
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-600"
             />
           </div>
         </div>
@@ -346,7 +346,7 @@ export function WorkOrderForm({
         <Button
           onClick={handleSubmit}
           disabled={!isFormValid()}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {userRole === 'admin' ? 'Approve & Submit WO' : 'Submit for Approval'}
         </Button>
