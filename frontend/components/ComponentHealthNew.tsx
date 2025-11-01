@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TankComponent } from '@/lib/types';
@@ -10,6 +11,8 @@ interface ComponentHealthProps {
 }
 
 export function ComponentHealthNew({ components }: ComponentHealthProps) {
+  const router = useRouter();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'operational':
@@ -83,7 +86,8 @@ export function ComponentHealthNew({ components }: ComponentHealthProps) {
               {sortedComponents.map((component) => (
                 <tr 
                   key={component.id} 
-                  className="hover:bg-slate-800/30 transition-colors"
+                  onClick={() => router.push(`/repair/${component.id}`)}
+                  className="hover:bg-slate-800/30 transition-colors cursor-pointer"
                 >
                   <td className="px-6 py-4">
                     <div>

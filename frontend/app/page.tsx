@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { WeightPanel } from '@/components/WeightPanel';
 import { TankOverview } from '@/components/TankOverview';
 import { TankSelector } from '@/components/TankSelector';
@@ -11,13 +12,19 @@ import { MaintenanceTimeline } from '@/components/charts/MaintenanceTimeline';
 import { ReadinessBreakdown } from '@/components/charts/ReadinessBreakdown';
 import { ComponentHealthTrend } from '@/components/charts/ComponentHealthTrend';
 import { ContextUpload } from '@/components/upload/ContextUpload';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { MaintenanceWeights, Tank } from '@/lib/types';
-import { allTanks, defaultWeights } from '@/lib/dummy-data';
+import { allTanks, defaultWeights, dummyApprovalRequests } from '@/lib/dummy-data';
+import { ClipboardCheck } from 'lucide-react';
 
 export default function Home() {
+  const router = useRouter();
   const [weights, setWeights] = useState<MaintenanceWeights>(defaultWeights);
   const [selectedTank, setSelectedTank] = useState<Tank>(allTanks[0]);
   const [userRole, setUserRole] = useState<UserRole>('admin');
+
+  const pendingApprovals = dummyApprovalRequests.filter(r => r.status === 'pending').length;
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -34,6 +41,21 @@ export default function Home() {
           </p>
         </div>
             <div className="flex items-center gap-3">
+              {userRole === 'admin' && (
+                <Button
+                  onClick={() => router.push('/approvals')}
+                  variant="outline"
+                  className="border-amber-500/50 text-amber-400 hover:bg-amber-950/50 relative"
+                >
+                  <ClipboardCheck className="w-4 h-4 mr-2" />
+                  Approvals
+                  {pendingApprovals > 0 && (
+                    <Badge className="ml-2 bg-amber-500 text-slate-950 border-0">
+                      {pendingApprovals}
+                    </Badge>
+                  )}
+                </Button>
+              )}
               <RoleSelector 
                 role={userRole}
                 onRoleChange={setUserRole}

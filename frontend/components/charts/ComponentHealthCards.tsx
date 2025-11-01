@@ -1,15 +1,18 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TankComponent } from '@/lib/types';
-import { Activity, Clock, AlertTriangle } from 'lucide-react';
+import { Activity, Clock, AlertTriangle, Wrench } from 'lucide-react';
 
 interface ComponentHealthCardsProps {
   components: TankComponent[];
 }
 
 export function ComponentHealthCards({ components }: ComponentHealthCardsProps) {
+  const router = useRouter();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'operational':
@@ -67,12 +70,13 @@ export function ComponentHealthCards({ components }: ComponentHealthCardsProps) 
           {sortedComponents.map((component) => (
             <div
               key={component.id}
-              className={`p-4 rounded-lg border transition-all hover:border-opacity-60 ${
+              onClick={() => router.push(`/repair/${component.id}`)}
+              className={`p-4 rounded-lg border transition-all hover:border-opacity-60 cursor-pointer hover:shadow-lg hover:scale-[1.02] ${
                 component.status === 'critical' || component.status === 'maintenance_required'
-                  ? 'bg-red-500/10 border-red-500/30'
+                  ? 'bg-red-500/10 border-red-500/30 hover:bg-red-500/20'
                   : component.status === 'degraded'
-                  ? 'bg-amber-500/10 border-amber-500/30'
-                  : 'bg-slate-800/50 border-slate-700'
+                  ? 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20'
+                  : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
               }`}
             >
               {/* Component Name & Status */}

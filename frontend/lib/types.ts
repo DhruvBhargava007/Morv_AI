@@ -52,3 +52,108 @@ export interface Tank {
   partsInventory: PartInventory[];
 }
 
+export interface Personnel {
+  id: string;
+  name: string;
+  specialization: string;
+  currentAssignments: string[];
+  availabilityStatus: 'available' | 'assigned' | 'on_leave' | 'unavailable';
+  location: string;
+}
+
+export interface WorkOrder {
+  id: string;
+  woNumber: string;
+  componentId: string;
+  tankId: string;
+  partNumber: string;
+  partName: string;
+  quantity: number;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  justification: string;
+  vendor: string;
+  estimatedCost: number;
+  deliveryTimeline: string;
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'completed';
+  submittedBy: string;
+  submittedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+}
+
+export interface PartTransfer {
+  id: string;
+  componentId: string;
+  partId: string;
+  partName: string;
+  sourceTankId: string;
+  destinationTankId: string;
+  quantity: number;
+  reason: string;
+  transferPath: string[];
+  estimatedTime: string;
+  logisticsCost: number;
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'completed';
+  submittedBy: string;
+  submittedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+}
+
+export interface PersonnelAssignment {
+  id: string;
+  componentId: string;
+  tankId: string;
+  personnelIds: string[];
+  estimatedHours: number;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  specialInstructions: string;
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'completed';
+  submittedBy: string;
+  submittedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+}
+
+export interface RepairRecommendation {
+  type: 'assign' | 'order' | 'transfer';
+  confidence: number;
+  reasoning: string;
+  estimatedTime: string;
+  estimatedCost: number;
+  recommendedAction: PersonnelAssignment | WorkOrder | PartTransfer;
+}
+
+export interface ApprovalRequest {
+  id: string;
+  type: 'work_order' | 'part_transfer' | 'personnel_assignment';
+  payload: WorkOrder | PartTransfer | PersonnelAssignment;
+  submittedBy: string;
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedBy?: string;
+  reviewedAt?: string;
+  comments?: string;
+}
+
+export interface TankNode {
+  id: string;
+  designation: string;
+  location: string;
+  x?: number;
+  y?: number;
+}
+
+export interface TransferEdge {
+  source: string;
+  target: string;
+  distance: number;
+  logisticsCost: number;
+  estimatedTime: string;
+}
+
+export interface TankNetwork {
+  nodes: TankNode[];
+  edges: TransferEdge[];
+}
+
