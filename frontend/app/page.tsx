@@ -12,6 +12,7 @@ import { MaintenanceTimeline } from '@/components/charts/MaintenanceTimeline';
 import { ReadinessBreakdown } from '@/components/charts/ReadinessBreakdown';
 import { ComponentHealthTrend } from '@/components/charts/ComponentHealthTrend';
 import { ContextUpload } from '@/components/upload/ContextUpload';
+import { AIExplanationPanel } from '@/components/AIExplanationPanel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MaintenanceWeights, Tank } from '@/lib/types';
@@ -42,7 +43,7 @@ export default function Home() {
           fetchMaintenance(selectedTank.id)
         ]);
         
-        // Update the selected tank with real API data
+        // Update the selected tank with real API data (includes AI explanations)
         const updatedTank: Tank = {
           ...selectedTank,
           readinessScore: predictions.readinessScore,
@@ -54,6 +55,7 @@ export default function Home() {
             hoursRemaining: c.hoursRemaining,
             lastServiced: c.lastServiced,
             nextService: c.nextService,
+            explanation: c.explanation,  // AI-generated explanation from agents
             drivers: c.drivers,
             formula: c.formula
           })),
@@ -191,6 +193,9 @@ export default function Home() {
                 days={30}
               />
             )}
+
+            {/* AI Health Analysis with Explanations */}
+            <AIExplanationPanel components={selectedTank.components} />
 
             {/* Maintenance Timeline */}
             <MaintenanceTimeline 

@@ -17,8 +17,17 @@ import tempfile
 import shutil
 
 # Import our modules
-from ingestion import ingest_tank_data
+from ingestion import ingest_tank_data, log_activity
 from health_engine import compute_health_index, compute_readiness_score
+
+# Import agents (with fallback if not installed)
+try:
+    from agents.supervisor import Supervisor
+    from agents.config import OPENAI_API_KEY, HYPERSPELL_API_KEY
+    AGENTS_AVAILABLE = True
+except ImportError:
+    AGENTS_AVAILABLE = False
+    print("⚠️  Agents not available - using rule-based fallback")
 
 app = Flask(__name__)
 CORS(app)
@@ -223,7 +232,42 @@ def ingest_data():
             file_path = os.path.join(temp_dir, filename)
             file_obj.save(file_path)
         
-        # Ingest data
+        # Use Supervisor with agents if available, otherwise direct ingestion
+        if AGENTS_AVAILABLE:
+            try:
+                supervisor = Supervisor(tank_id)
+                pipeline_result = supervisor.run_maintenance_pipeline(data_directory=temp_dir)
+                
+                # Extract results
+                data_result = pipeline_result['results'].get('data_ingestion', {})
+                summary = data_result.get('summary', {})
+                
+                response = {
+                    'jobId': str(uuid.uuid4()),
+                    'tankId': tank_id,
+                    'status': pipeline_result['status'],
+                    'filesProcessed': summary.get('files_processed', 0),
+                    'ingestedCounts': {
+                        file_type: result.get('rows_inserted', 0)
+                        for file_type, result in summary.get('file_results', {}).items()
+                    },
+                    'warnings': summary.get('warnings', [])[:10],
+                    'errors': summary.get('errors', [])[:10],
+                    'agentResults': {
+                        'readinessScore': pipeline_result['results'].get('health_predictions', {}).get('readiness_score', 0),
+                        'eventsGenerated': len(pipeline_result['results'].get('maintenance_schedule', {}).get('events', [])),
+                        'workOrdersCreated': len(pipeline_result['results'].get('logistics', {}).get('work_orders', []))
+                    }
+                }
+                
+                return jsonify(response), 200 if pipeline_result['status'] == 'success' else 207
+                
+            except Exception as e:
+                print(f"Agent pipeline error: {e}")
+                # Fallback to direct ingestion
+                pass
+        
+        # Fallback: Direct ingestion (no agents)
         summary = ingest_tank_data(tank_id, temp_dir)
         
         # Generate job ID for tracking
@@ -253,14 +297,42 @@ def ingest_data():
 def get_predictions_v2():
     """
     Get component health predictions for a tank
-    Replaces the old mock endpoint with real calculations
+    Uses agents with AI explanations if available, otherwise direct calculation
     """
     tank_id = request.args.get('tank_id')
     
     if not tank_id:
         return jsonify({'error': 'tank_id parameter is required'}), 400
     
-    # Compute health for all components
+    # Try to get from context store (agent results) first
+    if AGENTS_AVAILABLE:
+        try:
+            from agents.context_store import SimpleContextStore
+            
+            hyperspell = SimpleContextStore()
+            namespace = f"tank_{tank_id}"
+            
+            # Get health predictions from context store
+            health_context = hyperspell.retrieve(namespace, 'health_predictions')
+            
+            if health_context:
+                if isinstance(health_context, str):
+                    import json
+                    health_context = json.loads(health_context)
+                
+                # Return agent-generated predictions with AI explanations
+                return jsonify({
+                    'tankId': tank_id,
+                    'readinessScore': health_context.get('readiness_score', 0),
+                    'lastUpdated': health_context.get('timestamp', datetime.now().isoformat()),
+                    'components': health_context.get('components', []),
+                    'source': 'agent'  # Indicates AI-generated
+                })
+        except Exception as e:
+            print(f"Error retrieving from Hyperspell: {e}")
+            # Fallback to direct calculation
+    
+    # Fallback: Direct calculation (no agents)
     components = []
     for component_id in COMPONENT_IDS:
         try:
@@ -280,34 +352,71 @@ def get_predictions_v2():
                 })
         except Exception as e:
             print(f"Error computing health for {component_id}: {e}")
-            # Skip components with errors
             continue
     
     # Compute tank readiness score
     try:
         readiness_score = compute_readiness_score(tank_id, COMPONENT_IDS)
     except:
-        readiness_score = 50.0  # Default fallback
+        readiness_score = 50.0
     
     return jsonify({
         'tankId': tank_id,
         'readinessScore': readiness_score,
         'lastUpdated': datetime.now().isoformat(),
-        'components': components
+        'components': components,
+        'source': 'direct'  # Indicates direct calculation
     })
 
 
 @app.route('/api/maintenance', methods=['GET'])
 def get_maintenance_v2():
     """
-    Get maintenance schedule for a tank (rule-based, no AI yet)
+    Get maintenance schedule for a tank
+    Uses agents with AI-driven scheduling if available, otherwise rule-based
     """
     tank_id = request.args.get('tank_id')
     
     if not tank_id:
         return jsonify({'error': 'tank_id parameter is required'}), 400
     
-    # Get component health predictions
+    # Try to get from context store (agent results) first
+    if AGENTS_AVAILABLE:
+        try:
+            from agents.context_store import SimpleContextStore
+            
+            hyperspell = SimpleContextStore()
+            namespace = f"tank_{tank_id}"
+            
+            # Get maintenance schedule from context store
+            schedule_context = hyperspell.retrieve(namespace, 'maintenance_schedule')
+            
+            if schedule_context:
+                if isinstance(schedule_context, str):
+                    import json
+                    schedule_context = json.loads(schedule_context)
+                
+                # Get logistics recommendations
+                logistics_context = hyperspell.retrieve(namespace, 'logistics_recommendations')
+                if logistics_context:
+                    if isinstance(logistics_context, str):
+                        logistics_context = json.loads(logistics_context)
+                else:
+                    logistics_context = {'work_orders': [], 'personnel_assignments': []}
+                
+                # Return agent-generated schedule with AI reasoning
+                return jsonify({
+                    'tankId': tank_id,
+                    'events': schedule_context.get('events', []),
+                    'workOrders': logistics_context.get('work_orders', []),
+                    'personnelAssignments': logistics_context.get('personnel_assignments', []),
+                    'source': 'agent'  # Indicates AI-generated
+                })
+        except Exception as e:
+            print(f"Error retrieving from Hyperspell: {e}")
+            # Fallback to rule-based
+    
+    # Fallback: Rule-based scheduling (no agents)
     components = []
     for component_id in COMPONENT_IDS:
         try:
@@ -379,7 +488,10 @@ def get_maintenance_v2():
     
     return jsonify({
         'tankId': tank_id,
-        'events': events
+        'events': events,
+        'workOrders': [],
+        'personnelAssignments': [],
+        'source': 'direct'  # Indicates rule-based
     })
 
 

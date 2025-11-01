@@ -15,6 +15,7 @@ export interface TankComponent {
   lastServiced: string;
   nextService: string;
   hoursRemaining: number;
+  explanation?: string;  // AI-generated explanation
   drivers?: {feature: string; contribution: number}[];
   formula?: {
     alpha: number;
