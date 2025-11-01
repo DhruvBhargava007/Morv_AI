@@ -1,0 +1,7 @@
+componentId,componentName,basePriority,slaDays,deferCapDays
+eng-001,Engine,critical,3,1
+trn-001,Transmission,high,5,2
+hyd-001,Hydraulics,critical,2,1
+sus-001,Suspension,medium,7,3
+fcs-001,FireControl,high,4,2
+com-001,Communications,medium,7,3

@@ -1,0 +1,7 @@
+componentId,componentName,riskClass,missionCriticality,weibull_k,weibull_eta_hours
+eng-001,Engine,critical,0.95,2.2,3500
+trn-001,Transmission,high,0.9,2.5,4200
+hyd-001,Hydraulics,critical,0.92,1.8,2800
+sus-001,Suspension,medium,0.75,2.0,3200
+fcs-001,FireControl,high,0.88,3.0,5000
+com-001,Communications,medium,0.7,2.8,4500

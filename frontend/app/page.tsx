@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { WeightPanel } from '@/components/WeightPanel';
 import { TankOverview } from '@/components/TankOverview';
@@ -16,15 +16,72 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MaintenanceWeights, Tank } from '@/lib/types';
 import { allTanks, defaultWeights, dummyApprovalRequests } from '@/lib/dummy-data';
-import { ClipboardCheck } from 'lucide-react';
+import { fetchPredictions, fetchMaintenance } from '@/lib/api-client';
+import { ClipboardCheck, AlertCircle } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
   const [weights, setWeights] = useState<MaintenanceWeights>(defaultWeights);
   const [selectedTank, setSelectedTank] = useState<Tank>(allTanks[0]);
   const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [tankList, setTankList] = useState<Tank[]>(allTanks);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const pendingApprovals = dummyApprovalRequests.filter(r => r.status === 'pending').length;
+
+  // Fetch real data from API for selected tank
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const [predictions, maintenance] = await Promise.all([
+          fetchPredictions(selectedTank.id),
+          fetchMaintenance(selectedTank.id)
+        ]);
+        
+        // Update the selected tank with real API data
+        const updatedTank: Tank = {
+          ...selectedTank,
+          readinessScore: predictions.readinessScore,
+          components: predictions.components.map(c => ({
+            id: c.id,
+            name: c.name || c.id,
+            health: c.health,
+            status: c.status,
+            hoursRemaining: c.hoursRemaining,
+            lastServiced: c.lastServiced,
+            nextService: c.nextService,
+            drivers: c.drivers,
+            formula: c.formula
+          })),
+          maintenanceEvents: maintenance.events.map(e => ({
+            id: e.id,
+            date: e.date,
+            type: e.type,
+            component: e.component,
+            description: e.description,
+            status: e.status,
+            priority: e.priority
+          }))
+        };
+        
+        // Update both the selected tank and the tank in the list
+        setSelectedTank(updatedTank);
+        setTankList(prev => prev.map(t => t.id === updatedTank.id ? updatedTank : t));
+        setError(null);
+      } catch (err) {
+        console.error('Failed to load API data:', err);
+        setError('Using offline data - backend not available');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadData();
+  }, [selectedTank.id]);
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -61,7 +118,7 @@ export default function Home() {
                 onRoleChange={setUserRole}
               />
               <TankSelector 
-                tanks={allTanks} 
+                tanks={tankList} 
                 selectedTank={selectedTank} 
                 onSelectTank={setSelectedTank}
               />
@@ -90,6 +147,20 @@ export default function Home() {
 
           {/* Main Content - Full width for technicians, reduced for admin */}
           <div className={`${userRole === 'admin' ? 'col-span-12 lg:col-span-8 xl:col-span-9' : 'col-span-12'} space-y-6`}>
+            {/* Loading/Error State */}
+            {error && (
+              <div className="mb-4 p-4 bg-amber-950/30 border border-amber-500/50 rounded-lg flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-400" />
+                <span className="text-amber-200 text-sm">{error}</span>
+              </div>
+            )}
+
+            {loading && (
+              <div className="mb-4 p-4 bg-blue-950/30 border border-blue-500/50 rounded-lg text-center">
+                <span className="text-blue-200 text-sm">Loading tank data...</span>
+              </div>
+            )}
+
             {/* Tank Overview */}
             <TankOverview tank={selectedTank} isTechnician={userRole === 'technician'} />
 

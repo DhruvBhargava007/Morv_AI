@@ -222,8 +222,8 @@ export const dummyPartsInventory: PartInventory[] = [
 
 export const dummyTank: Tank = {
   id: 'TNK-A-047',
-  designation: 'M1A2 SEPv3',
-  model: 'M1 Abrams',
+  designation: 'Alpha-047',
+  model: 'M1A2 SEPv3',
   serialNumber: 'USAM1-2024-0847',
   operatingHours: 2847,
   location: 'Fort Irwin, CA',
@@ -238,8 +238,8 @@ export const dummyTank: Tank = {
 // Additional tank data for selection
 export const dummyTank2: Tank = {
   id: 'TNK-B-023',
-  designation: 'M1A2 SEPv3',
-  model: 'M1 Abrams',
+  designation: 'Bravo-023',
+  model: 'M1A2 SEPv3',
   serialNumber: 'USAM1-2024-0623',
   operatingHours: 3142,
   location: 'Fort Hood, TX',
@@ -247,16 +247,12 @@ export const dummyTank2: Tank = {
   readinessScore: 62,
   lastInspection: '2025-10-25',
   components: [
-    { id: 'eng-002', name: 'Main Engine', health: 78, status: 'operational', lastServiced: '2025-08-10', nextService: '2025-11-10', hoursRemaining: 180 },
-    { id: 'trk-002', name: 'Track System', health: 45, status: 'critical', lastServiced: '2025-06-15', nextService: '2025-11-01', hoursRemaining: 8 },
-    { id: 'trn-002', name: 'Transmission', health: 88, status: 'operational', lastServiced: '2025-09-20', nextService: '2025-12-20', hoursRemaining: 320 },
-    { id: 'gun-002', name: 'Main Gun System', health: 92, status: 'operational', lastServiced: '2025-10-05', nextService: '2026-01-05', hoursRemaining: 410 },
-    { id: 'sus-002', name: 'Suspension System', health: 58, status: 'degraded', lastServiced: '2025-07-20', nextService: '2025-11-08', hoursRemaining: 95 },
-    { id: 'fcs-002', name: 'Fire Control System', health: 85, status: 'operational', lastServiced: '2025-09-15', nextService: '2025-12-15', hoursRemaining: 290 },
-    { id: 'com-002', name: 'Communications Array', health: 68, status: 'degraded', lastServiced: '2025-08-01', nextService: '2025-11-15', hoursRemaining: 140 },
-    { id: 'pow-002', name: 'Auxiliary Power Unit', health: 75, status: 'operational', lastServiced: '2025-08-25', nextService: '2025-11-25', hoursRemaining: 240 },
-    { id: 'hyd-002', name: 'Hydraulic System', health: 52, status: 'maintenance_required', lastServiced: '2025-06-28', nextService: '2025-10-31', hoursRemaining: 2 },
-    { id: 'arm-002', name: 'Reactive Armor Panels', health: 80, status: 'operational', lastServiced: '2025-09-05', nextService: '2025-12-05', hoursRemaining: 270 }
+    { id: 'eng-001', name: 'Main Engine', health: 78, status: 'operational', lastServiced: '2025-08-10', nextService: '2025-11-10', hoursRemaining: 180 },
+    { id: 'trn-001', name: 'Transmission', health: 88, status: 'operational', lastServiced: '2025-09-20', nextService: '2025-12-20', hoursRemaining: 320 },
+    { id: 'hyd-001', name: 'Hydraulic System', health: 52, status: 'maintenance_required', lastServiced: '2025-06-28', nextService: '2025-10-31', hoursRemaining: 2 },
+    { id: 'sus-001', name: 'Suspension System', health: 58, status: 'degraded', lastServiced: '2025-07-20', nextService: '2025-11-08', hoursRemaining: 95 },
+    { id: 'fcs-001', name: 'Fire Control System', health: 85, status: 'operational', lastServiced: '2025-09-15', nextService: '2025-12-15', hoursRemaining: 290 },
+    { id: 'com-001', name: 'Communications Array', health: 68, status: 'degraded', lastServiced: '2025-08-01', nextService: '2025-11-15', hoursRemaining: 140 }
   ],
   maintenanceEvents: [
     { id: 'mnt-201', date: '2025-10-31', type: 'scheduled', component: 'Hydraulic System', description: 'Emergency hydraulic system overhaul', status: 'in_progress', priority: 'critical' },
@@ -268,8 +264,8 @@ export const dummyTank2: Tank = {
 
 export const dummyTank3: Tank = {
   id: 'TNK-C-091',
-  designation: 'M1A2 SEPv3',
-  model: 'M1 Abrams',
+  designation: 'Charlie-091',
+  model: 'M1A2 SEPv3',
   serialNumber: 'USAM1-2024-0991',
   operatingHours: 1523,
   location: 'Fort Benning, GA',
@@ -277,16 +273,12 @@ export const dummyTank3: Tank = {
   readinessScore: 94,
   lastInspection: '2025-10-30',
   components: [
-    { id: 'eng-003', name: 'Main Engine', health: 96, status: 'operational', lastServiced: '2025-10-01', nextService: '2026-01-01', hoursRemaining: 480 },
-    { id: 'trk-003', name: 'Track System', health: 89, status: 'operational', lastServiced: '2025-09-25', nextService: '2025-12-25', hoursRemaining: 420 },
-    { id: 'trn-003', name: 'Transmission', health: 93, status: 'operational', lastServiced: '2025-10-05', nextService: '2026-01-05', hoursRemaining: 450 },
-    { id: 'gun-003', name: 'Main Gun System', health: 97, status: 'operational', lastServiced: '2025-10-15', nextService: '2026-01-15', hoursRemaining: 510 },
-    { id: 'sus-003', name: 'Suspension System', health: 91, status: 'operational', lastServiced: '2025-09-20', nextService: '2025-12-20', hoursRemaining: 435 },
-    { id: 'fcs-003', name: 'Fire Control System', health: 94, status: 'operational', lastServiced: '2025-10-10', nextService: '2026-01-10', hoursRemaining: 480 },
-    { id: 'com-003', name: 'Communications Array', health: 88, status: 'operational', lastServiced: '2025-09-30', nextService: '2025-12-30', hoursRemaining: 460 },
-    { id: 'pow-003', name: 'Auxiliary Power Unit', health: 92, status: 'operational', lastServiced: '2025-10-08', nextService: '2026-01-08', hoursRemaining: 475 },
-    { id: 'hyd-003', name: 'Hydraulic System', health: 95, status: 'operational', lastServiced: '2025-10-12', nextService: '2026-01-12', hoursRemaining: 490 },
-    { id: 'arm-003', name: 'Reactive Armor Panels', health: 90, status: 'operational', lastServiced: '2025-10-03', nextService: '2026-01-03', hoursRemaining: 465 }
+    { id: 'eng-001', name: 'Main Engine', health: 96, status: 'operational', lastServiced: '2025-10-01', nextService: '2026-01-01', hoursRemaining: 480 },
+    { id: 'trn-001', name: 'Transmission', health: 93, status: 'operational', lastServiced: '2025-10-05', nextService: '2026-01-05', hoursRemaining: 450 },
+    { id: 'hyd-001', name: 'Hydraulic System', health: 95, status: 'operational', lastServiced: '2025-10-12', nextService: '2026-01-12', hoursRemaining: 490 },
+    { id: 'sus-001', name: 'Suspension System', health: 91, status: 'operational', lastServiced: '2025-09-20', nextService: '2025-12-20', hoursRemaining: 435 },
+    { id: 'fcs-001', name: 'Fire Control System', health: 94, status: 'operational', lastServiced: '2025-10-10', nextService: '2026-01-10', hoursRemaining: 480 },
+    { id: 'com-001', name: 'Communications Array', health: 88, status: 'operational', lastServiced: '2025-09-30', nextService: '2025-12-30', hoursRemaining: 460 }
   ],
   maintenanceEvents: [
     { id: 'mnt-301', date: '2025-11-20', type: 'preventive', component: 'Main Engine', description: 'Routine oil change and filter replacement', status: 'pending', priority: 'low' },

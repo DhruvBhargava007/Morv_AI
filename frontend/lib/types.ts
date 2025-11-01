@@ -15,6 +15,15 @@ export interface TankComponent {
   lastServiced: string;
   nextService: string;
   hoursRemaining: number;
+  drivers?: {feature: string; contribution: number}[];
+  formula?: {
+    alpha: number;
+    beta: number;
+    gamma: number;
+    delta: number;
+    weights: Record<string, number>;
+    thresholds: Record<string, number>;
+  };
 }
 
 export interface MaintenanceEvent {
