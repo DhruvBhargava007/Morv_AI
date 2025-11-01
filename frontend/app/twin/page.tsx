@@ -66,6 +66,50 @@ export default function DigitalTwinPage() {
 
   const availableParts = ['turret', 'engine', 'tracks', 'armor', 'optics', 'transmission'];
 
+  // Map frontend tank names to database names and variants
+  const getTankDbMapping = (tank: TankConfig): { name: string; variant: string } => {
+    const mapping: Record<string, { name: string; variant: string }> = {
+      'Abrams M1A2 SEPv3': { name: 'M1 Abrams', variant: 'M1A2 SEPv3' },
+      'Leopard 2A7': { name: 'Leopard 2', variant: '2A7' },
+      'T-90M': { name: 'T-90', variant: 'T-90M Proryv-3' },
+    };
+    return mapping[tank.name] || { name: 'M1 Abrams', variant: 'M1A2 SEPv3' };
+  };
+
+  // Fetch part info from API
+  const fetchPartInfo = async (tank: TankConfig, partName: string): Promise<PartData | null> => {
+    const tankMapping = getTankDbMapping(tank);
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    
+    try {
+      const params = new URLSearchParams({
+        tank_name: tankMapping.name,
+        tank_variant: tankMapping.variant,
+        part_name: partName,
+      });
+      
+      const response = await fetch(`${apiBase}/part-info?${params}`);
+      
+      if (!response.ok) {
+        console.error(`API error: ${response.status} ${response.statusText}`);
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      return {
+        partName: data.partName || partName,
+        name: partName.charAt(0).toUpperCase() + partName.slice(1),
+        description: data.partData?.description || `${partName} specifications`,
+        partData: data.partData,
+        maintenanceData: data.maintenanceData,
+      };
+    } catch (error) {
+      console.error('Error fetching part info from API:', error);
+      return null;
+    }
+  };
+
   const handlePartClick = async (partName: string) => {
     console.log('🔵 handlePartClick called with:', partName);
     setLoadingPart(true);
@@ -129,13 +173,25 @@ export default function DigitalTwinPage() {
     }
 
     try {
-      const partData = partsData[dbPartName] || partsData['turret'];
-      if (partData) {
-        setSelectedPart(partData);
+      // Try to fetch from API first
+      const apiPartData = await fetchPartInfo(currentTank, dbPartName);
+      
+      if (apiPartData && apiPartData.partData) {
+        console.log('✅ Using database data for:', dbPartName);
+        setSelectedPart(apiPartData);
         setDrawerOpen(true);
+      } else {
+        // Fallback to mock data if API fails
+        console.log('⚠️ API data not available, using mock data for:', dbPartName);
+        const partData = partsData[dbPartName] || partsData['turret'];
+        if (partData) {
+          setSelectedPart(partData);
+          setDrawerOpen(true);
+        }
       }
     } catch (error) {
       console.error('Error loading part data:', error);
+      // Fallback to mock data on error
       const partData = partsData[dbPartName] || partsData['turret'];
       if (partData) {
         setSelectedPart(partData);

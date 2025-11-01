@@ -108,7 +108,7 @@ const InfoDrawer: React.FC<InfoDrawerProps> = ({ selectedPart, isOpen, onClose, 
         ) : isDatabaseData ? (
           <>
             <div className="mb-5">
-              <h3 className="text-lg font-semibold text-white mb-2 capitalize">{selectedPart.partName}</h3>
+              <h3 className="text-lg font-semibold text-white mb-2 capitalize">{selectedPart.partName || selectedPart.name}</h3>
               <p className="text-gray-400 text-sm mb-3">{selectedPart.partData?.description}</p>
             </div>
 

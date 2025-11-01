@@ -714,6 +714,113 @@ def stream_repair_recommendation():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/part-info', methods=['GET'])
+def get_part_info():
+    """Get part specifications and maintenance data for a specific tank and part"""
+    tank_name = request.args.get('tank_name')  # e.g., "M1 Abrams", "Leopard 2", "T-90"
+    tank_variant = request.args.get('tank_variant')  # e.g., "M1A2 SEPv3", "2A7", "T-90M Proryv-3"
+    part_name = request.args.get('part_name')  # e.g., "turret", "engine", "tracks", "armor", "optics", "transmission"
+    
+    if not tank_name or not tank_variant or not part_name:
+        return jsonify({'error': 'tank_name, tank_variant, and part_name parameters are required'}), 400
+    
+    conn = get_db_connection()
+    
+    # First, get the tank_id from name and variant
+    tank_query = "SELECT tank_id FROM tanks WHERE name = ? AND variant = ?"
+    tank_row = conn.execute(tank_query, (tank_name, tank_variant)).fetchone()
+    
+    if not tank_row:
+        conn.close()
+        return jsonify({'error': 'Tank not found'}), 404
+    
+    tank_id = tank_row['tank_id']
+    
+    # Map part names to database tables
+    part_table_map = {
+        'turret': {
+            'table': 'weapons_main',
+            'description': 'Main weapon and turret system specifications',
+            'fields': ['gun_caliber_mm', 'gun_type', 'gun_model', 'barrel_length_m', 
+                      'turret_traverse_degrees_per_sec', 'rate_of_fire_rounds_per_min', 
+                      'max_effective_range_m']
+        },
+        'engine': {
+            'table': 'engines',
+            'description': 'Engine and powerplant specifications',
+            'fields': ['engine_type', 'engine_model', 'max_power_hp', 'max_torque_nm', 
+                      'fuel_type', 'displacement_liters', 'configuration']
+        },
+        'tracks': {
+            'table': 'suspension',
+            'description': 'Suspension and track system specifications',
+            'fields': ['suspension_type', 'road_wheels_per_side', 'track_type', 
+                      'track_width_mm', 'track_length_mm', 'track_links_per_side', 'shock_absorbers']
+        },
+        'armor': {
+            'table': 'armor',
+            'description': 'Armor and protection system specifications',
+            'fields': ['hull_front_type', 'hull_front_equivalent_rha_mm', 
+                      'turret_front_type', 'turret_front_equivalent_rha_mm', 
+                      'reactive_armor', 'composite_armor', 'hard_kill_systems']
+        },
+        'optics': {
+            'table': 'fire_control',
+            'description': 'Fire control and targeting system specifications',
+            'fields': ['laser_rangefinder_range_m', 'gunner_sight_type', 
+                      'gunner_sight_thermal_range_m', 'commander_independent_viewer', 
+                      'hunter_killer_capable', 'target_tracking', 'first_round_hit_probability']
+        },
+        'transmission': {
+            'table': 'transmissions',
+            'description': 'Transmission and drivetrain specifications',
+            'fields': ['transmission_type', 'model', 'forward_gears', 'reverse_gears', 
+                      'torque_converter', 'steering_type', 'braking_system']
+        }
+    }
+    
+    part_config = part_table_map.get(part_name.lower())
+    if not part_config:
+        conn.close()
+        return jsonify({'error': f'Unknown part: {part_name}'}), 400
+    
+    # Get part specifications
+    fields = ', '.join(part_config['fields'])
+    part_query = f"SELECT {fields} FROM {part_config['table']} WHERE tank_id = ?"
+    part_row = conn.execute(part_query, (tank_id,)).fetchone()
+    
+    if not part_row:
+        conn.close()
+        return jsonify({'error': f'Part data not found for {part_name}'}), 404
+    
+    # Convert row to dictionary, filtering out None values
+    specifications = {field: part_row[field] for field in part_config['fields'] 
+                      if part_row[field] is not None}
+    
+    # Get maintenance data
+    maint_query = "SELECT * FROM maintenance WHERE tank_id = ?"
+    maint_row = conn.execute(maint_query, (tank_id,)).fetchone()
+    
+    maintenance_data = {}
+    if maint_row:
+        # Exclude internal IDs
+        for key in maint_row.keys():
+            if key not in ['maintenance_id', 'tank_id'] and maint_row[key] is not None:
+                maintenance_data[key] = maint_row[key]
+    
+    conn.close()
+    
+    return jsonify({
+        'partName': part_name,
+        'partData': {
+            'description': part_config['description'],
+            'specifications': specifications
+        },
+        'maintenanceData': maintenance_data,
+        'tankId': tank_id
+    })
+
+
 if __name__ == '__main__':
     # Check if database exists
     if not os.path.exists(DB_PATH):
