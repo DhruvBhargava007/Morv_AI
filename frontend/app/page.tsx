@@ -39,6 +39,29 @@ export default function LandingPage() {
   // Ensure page renders immediately, model loads after mount
   React.useEffect(() => {
     setIsMounted(true);
+    
+    // Preload the default model early for faster initial load
+    if (currentTank?.modelPath) {
+      // Use link preload for faster loading
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'fetch';
+      link.href = currentTank.modelPath;
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
+      
+      // Also preload related resources if GLTF
+      if (currentTank.modelPath.endsWith('.gltf')) {
+        const basePath = currentTank.modelPath.replace('/scene.gltf', '');
+        // Preload .bin file
+        const binLink = document.createElement('link');
+        binLink.rel = 'preload';
+        binLink.as = 'fetch';
+        binLink.href = `${basePath}/scene.bin`;
+        binLink.crossOrigin = 'anonymous';
+        document.head.appendChild(binLink);
+      }
+    }
   }, []);
 
   const availableParts = ['turret', 'engine', 'tracks', 'armor', 'optics', 'transmission'];

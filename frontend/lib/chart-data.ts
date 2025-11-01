@@ -265,27 +265,37 @@ export function transformWeightsForReadinessBreakdown(
 
 /**
  * Generate historical health data (dummy for now, will be replaced with real data)
+ * Optimized to prevent memory issues by limiting data points
  */
 export function generateHistoricalHealthData(
   components: TankComponent[],
   days: number = 30
 ): ComponentHealthChartData[] {
+  // Limit to prevent memory issues
+  const safeDays = Math.min(days, 30);
+  const maxComponents = 10; // Limit components to prevent memory overflow
+  const limitedComponents = components.slice(0, maxComponents);
+  
   const data: ComponentHealthChartData[] = [];
   const today = new Date();
 
-  for (let i = days; i >= 0; i--) {
+  // Use fewer data points for performance
+  const step = safeDays > 15 ? 2 : 1; // Skip days if > 15 days
+  const actualDays = Math.floor(safeDays / step);
+
+  for (let i = actualDays; i >= 0; i--) {
     const date = new Date(today);
-    date.setDate(date.getDate() - i);
+    date.setDate(date.getDate() - (i * step));
     const dateStr = date.toISOString().split('T')[0];
 
     const entry: ComponentHealthChartData = {
       date: dateStr,
     };
 
-    components.forEach((component) => {
+    limitedComponents.forEach((component) => {
       // Simulate slight variation in health over time
       const baseHealth = component.health;
-      const variation = Math.sin(i / 5) * 2; // Small variation
+      const variation = Math.sin((i * step) / 5) * 2; // Small variation
       entry[component.name] = Math.max(0, Math.min(100, baseHealth + variation));
     });
 

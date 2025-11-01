@@ -1,24 +1,42 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ComponentHealthCards } from '@/components/charts/ComponentHealthCards';
-import { ComponentHealthTrend } from '@/components/charts/ComponentHealthTrend';
-import { ComponentHealthRadar } from '@/components/charts/ComponentHealthRadar';
-import { MaintenanceTimeline } from '@/components/charts/MaintenanceTimeline';
-import { ReadinessBreakdown } from '@/components/charts/ReadinessBreakdown';
+import dynamic from 'next/dynamic';
 import { RoleSelector, UserRole } from '@/components/RoleSelector';
 import { TankSelector } from '@/components/TankSelector';
-import { Tank, TankComponent } from '@/lib/types';
+import { Tank } from '@/lib/types';
 import { allTanks, defaultWeights } from '@/lib/dummy-data';
 import { AlertTriangle, ArrowLeft, Shield, Wrench } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+// Dynamically import chart components to reduce initial bundle size and prevent memory issues
+const ComponentHealthCards = dynamic(
+  () => import('@/components/charts/ComponentHealthCards').then(mod => ({ default: mod.ComponentHealthCards })),
+  { ssr: false, loading: () => <div className="h-64 bg-slate-900 rounded-lg animate-pulse" /> }
+);
+const ComponentHealthTrend = dynamic(
+  () => import('@/components/charts/ComponentHealthTrend').then(mod => ({ default: mod.ComponentHealthTrend })),
+  { ssr: false, loading: () => <div className="h-64 bg-slate-900 rounded-lg animate-pulse" /> }
+);
+const ComponentHealthRadar = dynamic(
+  () => import('@/components/charts/ComponentHealthRadar').then(mod => ({ default: mod.ComponentHealthRadar })),
+  { ssr: false, loading: () => <div className="h-64 bg-slate-900 rounded-lg animate-pulse" /> }
+);
+const MaintenanceTimeline = dynamic(
+  () => import('@/components/charts/MaintenanceTimeline').then(mod => ({ default: mod.MaintenanceTimeline })),
+  { ssr: false, loading: () => <div className="h-64 bg-slate-900 rounded-lg animate-pulse" /> }
+);
+const ReadinessBreakdown = dynamic(
+  () => import('@/components/charts/ReadinessBreakdown').then(mod => ({ default: mod.ReadinessBreakdown })),
+  { ssr: false, loading: () => <div className="h-64 bg-slate-900 rounded-lg animate-pulse" /> }
+);
+
 export default function DashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedTank, setSelectedTank] = useState<Tank>(allTanks[0]);
+  const [selectedTank, setSelectedTank] = useState<Tank>(() => allTanks[0]);
   const [userRole, setUserRole] = useState<UserRole>('admin');
 
   useEffect(() => {
@@ -29,12 +47,17 @@ export default function DashboardPage() {
     }
   }, [searchParams]);
 
-  // Get broken/critical components
-  const brokenComponents = selectedTank.components.filter(
-    c => c.status === 'critical' || c.status === 'maintenance_required' || c.health < 50
+  // Memoize broken/critical components to avoid recalculating
+  const brokenComponents = useMemo(() => 
+    selectedTank.components.filter(
+      c => c.status === 'critical' || c.status === 'maintenance_required' || c.health < 50
+    ), [selectedTank.components]
   );
 
-  const criticalComponents = selectedTank.components.filter(c => c.status === 'critical');
+  const criticalComponents = useMemo(() => 
+    selectedTank.components.filter(c => c.status === 'critical'),
+    [selectedTank.components]
+  );
 
   // Admin vs Technician view differences
   const isAdmin = userRole === 'admin';
@@ -173,17 +196,26 @@ export default function DashboardPage() {
 
           {/* Component Health Radar */}
           <div>
-            <ComponentHealthRadar components={selectedTank.components} showDistribution={true} />
+            <ComponentHealthRadar 
+              components={selectedTank.components} 
+              showDistribution={true} 
+            />
           </div>
 
           {/* Component Health Trend */}
           <div>
-            <ComponentHealthTrend components={selectedTank.components} days={30} />
+            <ComponentHealthTrend 
+              components={selectedTank.components} 
+              days={30} 
+            />
           </div>
 
           {/* Maintenance Timeline */}
           <div className="lg:col-span-2">
-            <MaintenanceTimeline events={selectedTank.maintenanceEvents} showDistribution={true} />
+            <MaintenanceTimeline 
+              events={selectedTank.maintenanceEvents} 
+              showDistribution={true} 
+            />
           </div>
 
           {/* Readiness Breakdown - Admin only */}

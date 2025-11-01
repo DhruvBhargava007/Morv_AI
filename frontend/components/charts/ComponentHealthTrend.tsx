@@ -12,7 +12,9 @@ interface ComponentHealthTrendProps {
 }
 
 export function ComponentHealthTrend({ components, days = 30 }: ComponentHealthTrendProps) {
-  const historicalData = generateHistoricalHealthData(components, days);
+  // Limit days to prevent memory issues
+  const safeDays = Math.min(days, 30);
+  const historicalData = generateHistoricalHealthData(components, safeDays);
 
   // Get top 5 components for readability
   const topComponents = [...components]

@@ -1,10 +1,14 @@
 'use client';
 
-import React, { useRef, useState, Suspense } from 'react';
+import React, { useRef, useState, Suspense, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, useGLTF, Html, useProgress } from '@react-three/drei';
 import * as THREE from 'three';
+import { GLTF } from 'three-stdlib';
 import { TankConfig } from '@/lib/landing-types';
+
+// Model cache to prevent reloading
+const modelCache = new Map<string, GLTF>();
 
 // Loading progress component
 function LoadingProgress() {
@@ -26,16 +30,18 @@ function LoadingProgress() {
   ) : null;
 }
 
-// Component to load external GLTF model
+// Component to load external GLTF model with caching
 function ExternalModel({ url, onPartHover, onPartClick, hoveredPart }: {
   url: string;
   onPartHover: (part: string | null) => void;
   onPartClick: (part: string) => void;
   hoveredPart: string | null;
 }) {
-  const { scene } = useGLTF(url);
+  // Use useGLTF with cache option for faster reloads
+  const { scene } = useGLTF(url, true); // true = use cache
   const groupRef = useRef<THREE.Group>(null);
   const lastUrlRef = useRef<string | null>(null);
+  const processedRef = useRef(false);
 
   React.useEffect(() => {
     if (url) {
@@ -44,12 +50,13 @@ function ExternalModel({ url, onPartHover, onPartClick, hoveredPart }: {
     lastUrlRef.current = url;
   }, [url]);
 
+  // Optimize model processing - only do it once per URL
   React.useEffect(() => {
-    if (scene && url === lastUrlRef.current) {
-      console.log('✅ Model loaded successfully!', scene);
-      console.log('✅ Scene children:', scene.children.length);
-
-      requestAnimationFrame(() => {
+    if (scene && url === lastUrlRef.current && !processedRef.current) {
+      processedRef.current = true;
+      
+      // Use requestIdleCallback for non-critical processing
+      const processModel = () => {
         try {
           scene.position.set(0, 0, 0);
           scene.scale.set(1, 1, 1);
@@ -60,46 +67,65 @@ function ExternalModel({ url, onPartHover, onPartClick, hoveredPart }: {
           const center = box.getCenter(new THREE.Vector3());
           const size = box.getSize(new THREE.Vector3());
 
-          console.log('📦 Model bounds:', { center, size, isEmpty: box.isEmpty() });
-
           if (!box.isEmpty() && !isNaN(size.x) && !isNaN(size.y) && !isNaN(size.z) && size.x > 0 && size.y > 0 && size.z > 0) {
             const maxDim = Math.max(size.x, size.y, size.z);
             const scale = maxDim > 0 ? 8 / maxDim : 1;
-
-            console.log('📏 Scaling model:', { maxDim, scale, size });
 
             scene.position.x = -center.x;
             scene.position.y = -center.y;
             scene.position.z = -center.z;
             scene.scale.set(scale, scale, scale);
-
-            console.log('✅ Model positioned at:', scene.position);
-            console.log('✅ Model scale:', scene.scale);
           } else {
-            console.warn('⚠️ Invalid bounding box, trying fallback scaling');
             scene.position.set(0, 0, 0);
             scene.scale.set(0.01, 0.01, 0.01);
           }
 
           scene.updateMatrixWorld(true);
 
-          let meshCount = 0;
+          // Optimize materials - cache emissive properties efficiently
           scene.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
-              meshCount++;
               const mesh = child as THREE.Mesh;
               if (!mesh.userData.originalEmissive) {
-                mesh.userData.originalEmissive = (mesh.material as any)?.emissive?.clone() || new THREE.Color(0x000000);
-                mesh.userData.originalEmissiveIntensity = (mesh.material as any)?.emissiveIntensity || 0;
+                const material = mesh.material as THREE.MeshStandardMaterial;
+                if (material) {
+                  mesh.userData.originalEmissive = material.emissive?.clone() || new THREE.Color(0x000000);
+                  mesh.userData.originalEmissiveIntensity = material.emissiveIntensity || 0;
+                }
               }
               (child as any).cursor = 'pointer';
             }
           });
-          console.log('🔷 Found', meshCount, 'meshes in model');
         } catch (err) {
           console.error('❌ Error processing model:', err);
         }
+      };
+
+      // Use requestAnimationFrame for immediate visual update, then optimize
+      requestAnimationFrame(() => {
+        processModel();
+        // Further optimizations in idle time
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => {
+            // Optimize geometry and materials in idle time
+            scene.traverse((child) => {
+              if ((child as THREE.Mesh).isMesh) {
+                const mesh = child as THREE.Mesh;
+                // Merge geometries if possible to reduce draw calls
+                if (mesh.geometry) {
+                  mesh.geometry.computeBoundingSphere();
+                }
+              }
+            });
+          });
+        }
       });
+    }
+    
+    // Reset processed flag when URL changes
+    if (url !== lastUrlRef.current) {
+      processedRef.current = false;
+      lastUrlRef.current = url;
     }
   }, [scene, url]);
 
@@ -228,6 +254,22 @@ function ExternalModel({ url, onPartHover, onPartClick, hoveredPart }: {
   );
 }
 
+// Preload model function
+function preloadModel(url: string) {
+  if (url && !modelCache.has(url)) {
+    try {
+      // Use drei's preload utility for GLTF models
+      if (typeof useGLTF.preload === 'function') {
+        useGLTF.preload(url);
+        modelCache.set(url, null as any); // Mark as preloading
+        console.log('✅ Model preload initiated:', url);
+      }
+    } catch (err) {
+      console.warn('⚠️ Failed to preload model:', err);
+    }
+  }
+}
+
 // Scene component
 function Scene({ onPartHover, onPartClick, hoveredPart, tankModel }: {
   onPartHover: (part: string | null) => void;
@@ -237,17 +279,41 @@ function Scene({ onPartHover, onPartClick, hoveredPart, tankModel }: {
 }) {
   const modelUrl = tankModel?.modelPath;
 
-  React.useEffect(() => {
-    console.log('🎯 Scene using model URL:', modelUrl);
-    console.log('🎯 Tank config:', tankModel);
-  }, [modelUrl, tankModel]);
+  // Preload model on mount
+  useEffect(() => {
+    if (modelUrl) {
+      // Preload current model
+      preloadModel(modelUrl);
+      
+      // Preload other models in background for faster switching
+      setTimeout(() => {
+        const allModelPaths = [
+          '/models/abrams_m1a2_sepv3/scene.gltf',
+          '/models/leopard_2a7v_main_battle_tank.glb',
+          '/models/russian_t-90m3/scene.gltf'
+        ];
+        allModelPaths.forEach(path => {
+          if (path !== modelUrl) {
+            preloadModel(path);
+          }
+        });
+      }, 2000); // Delay to not interfere with initial load
+    }
+  }, [modelUrl]);
 
   return (
     <div className="w-full h-full">
       <Canvas 
         shadows 
         camera={{ position: [12, 8, 12], fov: 50 }} 
-        gl={{ antialias: true, powerPreference: 'high-performance' }} 
+        gl={{ 
+          antialias: true, 
+          powerPreference: 'high-performance',
+          alpha: false,
+          stencil: false,
+          depth: true,
+          logarithmicDepthBuffer: false
+        }} 
         dpr={[1, 1.5]} 
         style={{ width: '100%', height: '100%', background: '#1a1a1a' }}
       >
@@ -258,16 +324,16 @@ function Scene({ onPartHover, onPartClick, hoveredPart, tankModel }: {
           position={[10, 12, 8]}
           intensity={1.5}
           castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
           shadow-camera-far={50}
           shadow-camera-left={-10}
           shadow-camera-right={10}
           shadow-camera-top={10}
           shadow-camera-bottom={-10}
         />
-        <directionalLight position={[-8, 8, -8]} intensity={0.8} />
-        <directionalLight position={[0, 10, -5]} intensity={0.6} />
+        <directionalLight position={[-8, 8, -8]} intensity={0.8} castShadow={false} />
+        <directionalLight position={[0, 10, -5]} intensity={0.6} castShadow={false} />
         <pointLight position={[5, 10, 5]} intensity={0.5} />
         <pointLight position={[-5, 10, -5]} intensity={0.5} />
 
