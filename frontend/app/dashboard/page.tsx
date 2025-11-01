@@ -96,9 +96,9 @@ export default function DashboardPage() {
   const isAdmin = userRole === 'admin';
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-[#000000] text-white">
       {/* Header */}
-      <header className="bg-black/60 backdrop-blur-sm border-b border-gray-800 p-4">
+      <header className="bg-[#000000] border-b border-gray-800 p-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -131,7 +131,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-6 space-y-6 bg-[#000000]">
         {/* Alert Banner for Broken Components */}
         {brokenComponents.length > 0 && (
           <Card className="bg-slate-900/70 border-slate-700/50">

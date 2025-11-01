@@ -79,7 +79,7 @@ const InfoDrawer: React.FC<InfoDrawerProps> = ({ selectedPart, isOpen, onClose, 
   if (!isAlwaysVisible && (!isOpen || !selectedPart)) return null;
 
   return (
-    <div className="h-full w-full card-military backdrop-blur-sm shadow-2xl overflow-y-auto">
+    <div className="h-full w-full card-military backdrop-blur-sm overflow-y-auto">
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl title-section font-mono uppercase tracking-wider">Part Details</h2>

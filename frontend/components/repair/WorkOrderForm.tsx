@@ -111,7 +111,7 @@ export function WorkOrderForm({
   const isFieldLocked = (field: string) => lockedFields.has(field);
   const getFieldHighlight = (field: string) => {
     if (streamState.completedFields.has(field) && !isFieldLocked(field)) {
-      return 'ring-1 ring-slate-600/50 bg-slate-900/30';
+      return 'bg-slate-900/30';
     }
     return '';
   };
@@ -150,7 +150,7 @@ export function WorkOrderForm({
   };
 
   return (
-    <Card className={`bg-slate-900 border-slate-700 ${isRecommended ? 'ring-1 ring-slate-600/50' : ''}`}>
+    <Card className="bg-slate-900 border-slate-700">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">

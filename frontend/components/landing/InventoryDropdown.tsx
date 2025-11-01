@@ -35,7 +35,7 @@ const InventoryDropdown: React.FC<InventoryDropdownProps> = ({ selectedTank, onT
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="card-military border-[#3B82F6]/30 hover:border-[#3B82F6]/60 px-3 py-2 text-white text-sm font-medium transition-all flex items-center gap-2 min-w-[140px] hover:shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+        className="card-military border-[#3B82F6]/30 hover:border-[#3B82F6]/60 px-3 py-2 text-white text-sm font-medium transition-all flex items-center gap-2 min-w-[140px]"
       >
         <span className="font-sans">Inventory</span>
         <svg
@@ -49,7 +49,7 @@ const InventoryDropdown: React.FC<InventoryDropdownProps> = ({ selectedTank, onT
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 card-military border-[#3B82F6]/30 shadow-[0_8px_24px_rgba(0,0,0,0.5)] overflow-hidden min-w-[180px] z-50 accent-glow">
+        <div className="absolute top-full left-0 mt-1 card-military border-[#3B82F6]/30 overflow-hidden min-w-[180px] z-50">
           {tankOptions.map((tank) => (
             <button
               key={tank.id}
@@ -61,7 +61,7 @@ const InventoryDropdown: React.FC<InventoryDropdownProps> = ({ selectedTank, onT
               }}
               className={`w-full text-left px-3 py-2 text-sm transition-all flex items-center justify-between font-sans ${
                 selectedTank?.id === tank.id
-                  ? 'bg-gradient-to-r from-[#3B82F6]/30 to-[#2563EB]/20 text-[#60A5FA] border-l-2 border-[#3B82F6] shadow-[0_0_8px_rgba(59,130,246,0.3)]'
+                  ? 'bg-gradient-to-r from-[#3B82F6]/30 to-[#2563EB]/20 text-[#60A5FA] border-l-2 border-[#3B82F6]'
                   : 'text-[#8B949E] hover:bg-[#3B82F6]/10 hover:text-[#60A5FA]'
               } ${!tank.modelPath ? 'opacity-40 cursor-not-allowed' : ''}`}
               disabled={!tank.modelPath}

@@ -228,17 +228,13 @@ export default function DigitalTwinPage() {
   };
 
   return (
-    <div className="w-full h-screen bg-[#0D1117] relative overflow-hidden">
+    <div className="w-full h-screen bg-black relative overflow-visible">
       {/* Grid overlay */}
       <div className="absolute inset-0 bg-grid-overlay opacity-40 pointer-events-none" />
       
-      {/* Radial blue glow accent */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-radial from-[#3B82F6]/10 via-transparent to-transparent pointer-events-none blur-3xl" style={{
-        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%)'
-      }} />
       
       {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-40 bg-[#161B22]/90 backdrop-blur-sm border-b border-[#3B82F6]/30 p-4 shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+      <header className="absolute top-0 left-0 right-0 z-40 bg-[#161B22]/90 backdrop-blur-sm border-b border-[#3B82F6]/30 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
@@ -267,11 +263,11 @@ export default function DigitalTwinPage() {
       </header>
 
       {/* 4-Quadrant Layout */}
-      <div className="w-full h-full pt-16 grid grid-cols-2 grid-rows-2">
+      <div className="w-full h-full pt-16 grid grid-cols-2 grid-rows-2 overflow-visible">
         {/* Top Left Quadrant - 3D Scene */}
-        <div className="relative border-r border-b border-white/8">
+        <div className="relative border-r border-b border-white/8 overflow-visible" style={{ overflow: 'visible', clipPath: 'none' }}>
           {/* Part selector buttons overlay */}
-          <div className="absolute top-2 left-2 z-10 card-military backdrop-blur-sm px-3 py-2">
+          <div className="absolute top-4 left-4 z-20 card-military backdrop-blur-sm px-3 py-2 min-w-max" style={{ whiteSpace: 'nowrap' }}>
             <p className="text-white text-xs mb-2 font-sans">
               Hover to highlight • Click for details
             </p>
@@ -282,7 +278,7 @@ export default function DigitalTwinPage() {
                   onClick={() => handlePartClick(part)}
                   className={`px-2 py-1 text-xs rounded-2xl border transition-all font-sans ${
                     index === currentPartIndex
-                      ? 'bg-gradient-to-r from-[#3B82F6]/30 to-[#2563EB]/20 border-[#3B82F6]/60 text-[#60A5FA] accent-glow'
+                      ? 'bg-gradient-to-r from-[#3B82F6]/30 to-[#2563EB]/20 border-[#3B82F6]/60 text-[#60A5FA]'
                       : 'bg-[#21262D] border-[#3B82F6]/10 text-[#8B949E] hover:border-[#3B82F6]/40 hover:text-[#60A5FA] hover:bg-[#3B82F6]/10'
                   }`}
                 >
@@ -295,7 +291,7 @@ export default function DigitalTwinPage() {
           {/* Hover Tooltip */}
           {hoveredPart && !drawerOpen && !loadingPart && (
             <div className="absolute top-2 right-2 z-10 pointer-events-none">
-              <div className="bg-black/80 backdrop-blur-sm border border-gray-700 rounded-lg px-3 py-2 shadow-lg">
+              <div className="bg-black/80 backdrop-blur-sm border border-gray-700 rounded-lg px-3 py-2">
                 <p className="text-white text-sm font-medium capitalize">{hoveredPart}</p>
                 <p className="text-gray-400 text-xs mt-0.5">Click to view</p>
               </div>
@@ -305,7 +301,7 @@ export default function DigitalTwinPage() {
           {/* Loading indicator */}
           {loadingPart && (
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-              <div className="bg-black/80 backdrop-blur-sm border border-gray-700 rounded-lg px-4 py-3 shadow-lg">
+              <div className="bg-black/80 backdrop-blur-sm border border-gray-700 rounded-lg px-4 py-3">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   <p className="text-white text-sm">Loading part data...</p>
