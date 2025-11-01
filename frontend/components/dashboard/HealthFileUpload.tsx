@@ -54,7 +54,8 @@ export function HealthFileUpload({ tankId, onUploadComplete }: HealthFileUploadP
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/api/health/upload', {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiBase}/health/upload`, {
         method: 'POST',
         body: formData,
       });

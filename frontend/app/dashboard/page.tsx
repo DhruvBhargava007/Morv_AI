@@ -46,7 +46,8 @@ export default function DashboardPage() {
   const handleUploadComplete = async (jobId: string, category: string) => {
     setIsRecalculating(true);
     try {
-      const response = await fetch('http://localhost:8000/api/health/recalculate', {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiBase}/health/recalculate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
