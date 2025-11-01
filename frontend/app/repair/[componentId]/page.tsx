@@ -183,12 +183,12 @@ export default function RepairPage({ params }: RepairPageProps) {
         {/* Header */}
         <div className="mb-6">
           <Button
-            onClick={() => router.push('/')}
+            onClick={() => router.back()}
             variant="ghost"
             className="mb-4 text-slate-400 hover:text-slate-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            Back
           </Button>
 
           <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
