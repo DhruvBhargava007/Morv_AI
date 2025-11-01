@@ -1,221 +1,259 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { WeightPanel } from '@/components/WeightPanel';
-import { TankOverview } from '@/components/TankOverview';
-import { TankSelector } from '@/components/TankSelector';
-import { RoleSelector, UserRole } from '@/components/RoleSelector';
-import { ComponentHealthRadar } from '@/components/charts/ComponentHealthRadar';
-import { ComponentHealthCards } from '@/components/charts/ComponentHealthCards';
-import { MaintenanceTimeline } from '@/components/charts/MaintenanceTimeline';
-import { ReadinessBreakdown } from '@/components/charts/ReadinessBreakdown';
-import { ComponentHealthTrend } from '@/components/charts/ComponentHealthTrend';
-import { ContextUpload } from '@/components/upload/ContextUpload';
-import { AIExplanationPanel } from '@/components/AIExplanationPanel';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { MaintenanceWeights, Tank } from '@/lib/types';
-import { allTanks, defaultWeights, dummyApprovalRequests } from '@/lib/dummy-data';
-import { fetchPredictions, fetchMaintenance } from '@/lib/api-client';
-import { ClipboardCheck, AlertCircle } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import InfoDrawer from '@/components/landing/InfoDrawer';
+import InventoryDropdown from '@/components/landing/InventoryDropdown';
+import UploadButton from '@/components/landing/UploadButton';
+import SpecChanger from '@/components/landing/SpecChanger';
+import { partsData } from '@/lib/landing-data';
+import { defaultTank } from '@/lib/landing-config';
+import { TankConfig, PartData } from '@/lib/landing-types';
+import { Play } from 'lucide-react';
 
-export default function Home() {
+// Dynamically import Scene3D to avoid SSR issues with Three.js - load immediately but non-blocking
+const Scene3D = dynamic(() => import('@/components/landing/Scene3D'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-gray-900 relative">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="text-white text-sm font-medium">Initializing 3D Scene...</div>
+        <div className="text-gray-400 text-xs">This may take a moment</div>
+      </div>
+    </div>
+  ),
+});
+
+export default function LandingPage() {
   const router = useRouter();
-  const [weights, setWeights] = useState<MaintenanceWeights>(defaultWeights);
-  const [selectedTank, setSelectedTank] = useState<Tank>(allTanks[0]);
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [tankList, setTankList] = useState<Tank[]>(allTanks);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedPart, setSelectedPart] = useState<PartData | null>(null);
+  const [hoveredPart, setHoveredPart] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentTank, setCurrentTank] = useState<TankConfig>(defaultTank);
+  const [loadingPart, setLoadingPart] = useState(false);
+  const [currentPartIndex, setCurrentPartIndex] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
 
-  const pendingApprovals = dummyApprovalRequests.filter(r => r.status === 'pending').length;
+  // Ensure page renders immediately, model loads after mount
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  // Fetch real data from API for selected tank
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const [predictions, maintenance] = await Promise.all([
-          fetchPredictions(selectedTank.id),
-          fetchMaintenance(selectedTank.id)
-        ]);
-        
-        // Update the selected tank with real API data (includes AI explanations)
-        const updatedTank: Tank = {
-          ...selectedTank,
-          readinessScore: predictions.readinessScore,
-          components: predictions.components.map(c => ({
-            id: c.id,
-            name: c.name || c.id,
-            health: c.health,
-            status: c.status,
-            hoursRemaining: c.hoursRemaining,
-            lastServiced: c.lastServiced,
-            nextService: c.nextService,
-            explanation: c.explanation,  // AI-generated explanation from agents
-            drivers: c.drivers,
-            formula: c.formula
-          })),
-          maintenanceEvents: maintenance.events.map(e => ({
-            id: e.id,
-            date: e.date,
-            type: e.type,
-            component: e.component,
-            description: e.description,
-            status: e.status,
-            priority: e.priority
-          }))
-        };
-        
-        // Update both the selected tank and the tank in the list
-        setSelectedTank(updatedTank);
-        setTankList(prev => prev.map(t => t.id === updatedTank.id ? updatedTank : t));
-        setError(null);
-      } catch (err) {
-        console.error('Failed to load API data:', err);
-        setError('Using offline data - backend not available');
-      } finally {
-        setLoading(false);
+  const availableParts = ['turret', 'engine', 'tracks', 'armor', 'optics', 'transmission'];
+
+  const handlePartClick = async (partName: string) => {
+    console.log('🔵 handlePartClick called with:', partName);
+    setLoadingPart(true);
+    
+    const partNameMap: Record<string, string> = {
+      'turret': 'turret',
+      'gun': 'turret',
+      'main gun': 'turret',
+      'weapon': 'turret',
+      'cannon': 'turret',
+      'barrel': 'turret',
+      'engine': 'engine',
+      'powerplant': 'engine',
+      'motor': 'engine',
+      'power': 'engine',
+      'powertrain': 'engine',
+      'tracks': 'tracks',
+      'track': 'tracks',
+      'suspension': 'tracks',
+      'wheel': 'tracks',
+      'wheels': 'tracks',
+      'running gear': 'tracks',
+      'armor': 'armor',
+      'hull': 'armor',
+      'protection': 'armor',
+      'body': 'armor',
+      'optics': 'optics',
+      'sight': 'optics',
+      'fire control': 'optics',
+      'fcs': 'optics',
+      'viewer': 'optics',
+      'transmission': 'transmission',
+      'gearbox': 'transmission',
+      'trans': 'transmission'
+    };
+
+    const normalizedPartName = partName.toLowerCase().trim();
+    let dbPartName = partNameMap[normalizedPartName];
+    
+    if (!dbPartName) {
+      for (const [key, value] of Object.entries(partNameMap)) {
+        if (normalizedPartName.includes(key) || key.includes(normalizedPartName)) {
+          dbPartName = value;
+          console.log(`✅ Matched "${partName}" to "${key}" -> ${value}`);
+          break;
+        }
       }
     }
-    
-    loadData();
-  }, [selectedTank.id]);
+
+    if (!dbPartName) {
+      console.log('⚠️ Part not recognized, cycling to next part:', partName);
+      const nextIndex = (currentPartIndex + 1) % availableParts.length;
+      setCurrentPartIndex(nextIndex);
+      dbPartName = availableParts[nextIndex];
+      console.log(`🔄 Cycling to: ${dbPartName}`);
+    } else {
+      const foundIndex = availableParts.indexOf(dbPartName);
+      if (foundIndex !== -1) {
+        setCurrentPartIndex(foundIndex);
+      }
+    }
+
+    try {
+      const partData = partsData[dbPartName] || partsData['turret'];
+      if (partData) {
+        setSelectedPart(partData);
+        setDrawerOpen(true);
+      }
+    } catch (error) {
+      console.error('Error loading part data:', error);
+      const partData = partsData[dbPartName] || partsData['turret'];
+      if (partData) {
+        setSelectedPart(partData);
+        setDrawerOpen(true);
+      }
+    } finally {
+      setLoadingPart(false);
+    }
+  };
+
+  const handlePartHover = (partName: string | null) => {
+    setHoveredPart(partName);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+    setSelectedPart(null);
+  };
+
+  const handleTankSelect = (tank: TankConfig) => {
+    if (tank.modelPath) {
+      setCurrentTank(tank);
+      setDrawerOpen(false);
+      setSelectedPart(null);
+    }
+  };
+
+  const handleRunAIPipeline = () => {
+    router.push('/dashboard');
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <div className="container mx-auto px-4 py-6 max-w-[1800px]">
-        {/* Header */}
-        <header className="mb-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-slate-100 mb-1">
-                Tank Maintenance Control System
-          </h1>
-              <p className="text-slate-400">
-                Advanced predictive maintenance monitoring and management
-          </p>
-        </div>
-            <div className="flex items-center gap-3">
-              {userRole === 'admin' && (
-                <Button
-                  onClick={() => router.push('/approvals')}
-                  variant="outline"
-                  className="border-amber-500/50 text-amber-400 hover:bg-amber-950/50 relative"
-                >
-                  <ClipboardCheck className="w-4 h-4 mr-2" />
-                  Approvals
-                  {pendingApprovals > 0 && (
-                    <Badge className="ml-2 bg-amber-500 text-slate-950 border-0">
-                      {pendingApprovals}
-                    </Badge>
-                  )}
-                </Button>
-              )}
-              <RoleSelector 
-                role={userRole}
-                onRoleChange={setUserRole}
-              />
-              <TankSelector 
-                tanks={tankList} 
-                selectedTank={selectedTank} 
-                onSelectTank={setSelectedTank}
-              />
-              <div className="text-right">
-                <p className="text-sm text-slate-500 uppercase tracking-wider">System Status</p>
-                <p className="text-green-400 font-semibold">OPERATIONAL</p>
-              </div>
+    <div className="w-full h-screen bg-gray-900 relative overflow-hidden">
+      {/* Header */}
+      <header className="absolute top-0 left-0 right-0 z-40 bg-black/60 backdrop-blur-sm border-b border-gray-800 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Morv AI</h1>
+              <p className="text-gray-400 text-xs mt-0.5">Military CMMS System</p>
+            </div>
+            <InventoryDropdown 
+              selectedTank={currentTank}
+              onTankSelect={handleTankSelect}
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Run AI Agent Pipeline Button */}
+            <button
+              onClick={handleRunAIPipeline}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2 border border-blue-400/30"
+            >
+              <Play className="w-5 h-5" />
+              Run AI Agent Pipeline on Digital Twin
+            </button>
+            <div className="text-right">
+              <div className="text-white text-xs mb-0.5">Vehicle: {currentTank.vehicleId}</div>
+              <div className="text-green-400 text-xs">● Operational</div>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Main Grid Layout */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Column - Weight Panel (Admin Only) */}
-          {userRole === 'admin' && (
-            <div className="col-span-12 lg:col-span-4 xl:col-span-3">
-              <div className="sticky top-6">
-                <WeightPanel 
-                  weights={weights} 
-                  onWeightsChange={setWeights}
-                  readOnly={false}
-                />
+      {/* 4-Quadrant Layout */}
+      <div className="w-full h-full pt-16 grid grid-cols-2 grid-rows-2">
+        {/* Top Left Quadrant - 3D Scene */}
+        <div className="relative border-r border-b border-gray-800">
+          {/* Part selector buttons overlay */}
+          <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm border border-gray-800 rounded-lg px-3 py-2">
+            <p className="text-gray-300 text-xs mb-2">
+              Hover to highlight • Click for details
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {availableParts.map((part, index) => (
+                <button
+                  key={part}
+                  onClick={() => handlePartClick(part)}
+                  className={`px-2 py-1 text-xs rounded border transition-colors ${
+                    index === currentPartIndex
+                      ? 'bg-blue-500/30 border-blue-500 text-blue-300'
+                      : 'bg-gray-800/50 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                  }`}
+                >
+                  {part.charAt(0).toUpperCase() + part.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Hover Tooltip */}
+          {hoveredPart && !drawerOpen && !loadingPart && (
+            <div className="absolute top-2 right-2 z-10 pointer-events-none">
+              <div className="bg-black/80 backdrop-blur-sm border border-gray-700 rounded-lg px-3 py-2 shadow-lg">
+                <p className="text-white text-sm font-medium capitalize">{hoveredPart}</p>
+                <p className="text-gray-400 text-xs mt-0.5">Click to view</p>
               </div>
             </div>
           )}
 
-          {/* Main Content - Full width for technicians, reduced for admin */}
-          <div className={`${userRole === 'admin' ? 'col-span-12 lg:col-span-8 xl:col-span-9' : 'col-span-12'} space-y-6`}>
-            {/* Loading/Error State */}
-            {error && (
-              <div className="mb-4 p-4 bg-amber-950/30 border border-amber-500/50 rounded-lg flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-400" />
-                <span className="text-amber-200 text-sm">{error}</span>
+          {/* Loading indicator */}
+          {loadingPart && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+              <div className="bg-black/80 backdrop-blur-sm border border-gray-700 rounded-lg px-4 py-3 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-white text-sm">Loading part data...</p>
+                </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {loading && (
-              <div className="mb-4 p-4 bg-blue-950/30 border border-blue-500/50 rounded-lg text-center">
-                <span className="text-blue-200 text-sm">Loading tank data...</span>
-              </div>
-            )}
-
-            {/* Tank Overview */}
-            <TankOverview tank={selectedTank} isTechnician={userRole === 'technician'} />
-
-            {/* Readiness Breakdown - Admin Only */}
-            {userRole === 'admin' && (
-              <ReadinessBreakdown 
-                weights={weights} 
-                readinessScore={selectedTank.readinessScore}
-              />
-            )}
-
-            {/* Component Health - Different views for admin vs technician */}
-            {userRole === 'admin' ? (
-              <ComponentHealthRadar 
-                components={selectedTank.components}
-                showDistribution={true}
-              />
-            ) : (
-              <ComponentHealthCards 
-                components={selectedTank.components}
-              />
-            )}
-
-            {/* Component Health Trends - Admin Only */}
-            {userRole === 'admin' && (
-              <ComponentHealthTrend 
-                components={selectedTank.components}
-                days={30}
-              />
-            )}
-
-            {/* AI Health Analysis with Explanations */}
-            <AIExplanationPanel components={selectedTank.components} />
-
-            {/* Maintenance Timeline */}
-            <MaintenanceTimeline 
-              events={selectedTank.maintenanceEvents}
-              showDistribution={userRole === 'admin'}
+          {/* 3D Scene - Only render after mount to avoid blocking initial render */}
+          {isMounted && (
+            <Scene3D
+              onPartHover={handlePartHover}
+              onPartClick={handlePartClick}
+              hoveredPart={hoveredPart}
+              tankModel={currentTank}
             />
-
-            {/* AI Context Upload - Admin Only */}
-            {userRole === 'admin' && (
-              <ContextUpload tankId={selectedTank.id} />
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Footer */}
-        <footer className="mt-12 pt-6 border-t border-slate-800 text-center">
-          <p className="text-xs text-slate-500">
-            Tank Maintenance Control System v1.0 | Classified: UNCLASSIFIED
-          </p>
-        </footer>
+        {/* Top Right Quadrant - Info Drawer */}
+        <div className="relative border-b border-gray-800">
+          <InfoDrawer
+            selectedPart={selectedPart}
+            isOpen={drawerOpen}
+            onClose={handleCloseDrawer}
+            isAlwaysVisible={true}
+          />
+        </div>
+
+        {/* Bottom Left Quadrant - Spec Changer */}
+        <div className="relative border-r border-gray-800">
+          <SpecChanger selectedPart={selectedPart} />
+        </div>
+
+        {/* Bottom Right Quadrant - Upload Button */}
+        <div className="relative">
+          <UploadButton />
+        </div>
       </div>
     </div>
   );
