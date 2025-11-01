@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Personnel, TankComponent, Tank } from '@/lib/types';
-import { Users, CheckCircle2, XCircle, Search } from 'lucide-react';
+import { Users, CheckCircle2, XCircle, Search, Sparkles, Lock, Unlock } from 'lucide-react';
 import { checkPersonnelAvailability, generateAssignmentId, getPriorityFromComponent } from '@/lib/repair-utils';
+import { useRepairStream } from '@/lib/hooks/useRepairStream';
 
 interface PersonnelAssignmentProps {
   component: TankComponent;
@@ -15,6 +16,7 @@ interface PersonnelAssignmentProps {
   isRecommended?: boolean;
   userRole: 'admin' | 'technician';
   onSubmit: (assignment: any) => void;
+  onStreamUpdate?: (updates: any[]) => void;
 }
 
 export function PersonnelAssignment({ 
@@ -23,12 +25,68 @@ export function PersonnelAssignment({
   availablePersonnel, 
   isRecommended = false,
   userRole,
-  onSubmit 
+  onSubmit,
+  onStreamUpdate
 }: PersonnelAssignmentProps) {
   const [selectedPersonnel, setSelectedPersonnel] = useState<string[]>([]);
   const [estimatedHours, setEstimatedHours] = useState<number>(4);
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // AI assistance state
+  const [aiAssistEnabled, setAiAssistEnabled] = useState(false);
+  const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
+  const { streamState, startStream, getFieldValue, getFieldReasoning } = useRepairStream();
+
+  // Apply AI recommendations as they come in
+  useEffect(() => {
+    if (streamState.updates.length > 0) {
+      streamState.updates.forEach((update) => {
+        if (!lockedFields.has(update.field)) {
+          switch (update.field) {
+            case 'personnelIds':
+              if (Array.isArray(update.value)) {
+                setSelectedPersonnel(update.value);
+              }
+              break;
+            case 'estimatedHours':
+              setEstimatedHours(Number(update.value));
+              break;
+            case 'specialInstructions':
+              setSpecialInstructions(update.value);
+              break;
+          }
+        }
+      });
+      
+      onStreamUpdate?.(streamState.updates);
+    }
+  }, [streamState.updates, lockedFields, onStreamUpdate]);
+
+  const toggleFieldLock = (field: string) => {
+    setLockedFields((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(field)) {
+        newSet.delete(field);
+      } else {
+        newSet.add(field);
+      }
+      return newSet;
+    });
+  };
+
+  const handleAIAssist = () => {
+    setAiAssistEnabled(true);
+    startStream(component.id, tank.id, 'personnel_assignment');
+  };
+
+  const isFieldLocked = (field: string) => lockedFields.has(field);
+  const getFieldHighlight = (field: string) => {
+    if (streamState.completedFields.has(field) && !isFieldLocked(field)) {
+      return 'ring-2 ring-blue-500/50 bg-blue-950/20';
+    }
+    return '';
+  };
 
   const togglePersonnel = (personnelId: string) => {
     if (selectedPersonnel.includes(personnelId)) {
@@ -88,7 +146,7 @@ export function PersonnelAssignment({
   return (
     <Card className={`bg-slate-900 border-slate-700 ${isRecommended ? 'ring-2 ring-emerald-500/50' : ''}`}>
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-400" />
             <CardTitle className="text-slate-100">Assign Personnel</CardTitle>
@@ -99,6 +157,21 @@ export function PersonnelAssignment({
             </Badge>
           )}
         </div>
+        {!aiAssistEnabled && (
+          <Button
+            onClick={handleAIAssist}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI Assist - Auto-Fill Form
+          </Button>
+        )}
+        {aiAssistEnabled && streamState.isStreaming && (
+          <div className="text-sm text-blue-400 text-center py-2">
+            <Sparkles className="w-4 h-4 inline mr-2 animate-pulse" />
+            AI is analyzing and filling fields...
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search Bar */}

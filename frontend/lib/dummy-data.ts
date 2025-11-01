@@ -556,14 +556,498 @@ export const dummyApprovalRequests: ApprovalRequest[] = [
 
 export const tankNetwork: TankNetwork = {
   nodes: [
-    { id: 'TNK-A-042', designation: 'M1A2 SEPv2', location: 'Fort Hood, TX', x: 100, y: 200 },
-    { id: 'TNK-B-087', designation: 'M1A2 SEPv2', location: 'Fort Hood, TX', x: 300, y: 180 },
-    { id: 'TNK-C-091', designation: 'M1A2 SEPv3', location: 'Fort Benning, GA', x: 500, y: 220 }
+    { id: 'TNK-A-047', designation: 'Alpha-047', location: 'Fort Irwin, CA', x: 100, y: 200 },
+    { id: 'TNK-B-023', designation: 'Bravo-023', location: 'Fort Hood, TX', x: 300, y: 180 },
+    { id: 'TNK-C-091', designation: 'Charlie-091', location: 'Fort Benning, GA', x: 500, y: 220 }
   ],
   edges: [
-    { source: 'TNK-A-042', target: 'TNK-B-087', distance: 15, logisticsCost: 250, estimatedTime: '2 hours' },
-    { source: 'TNK-B-087', target: 'TNK-C-091', distance: 420, logisticsCost: 1850, estimatedTime: '12 hours' },
-    { source: 'TNK-A-042', target: 'TNK-C-091', distance: 435, logisticsCost: 1920, estimatedTime: '13 hours' }
+    { source: 'TNK-A-047', target: 'TNK-B-023', distance: 1850, logisticsCost: 2500, estimatedTime: '18 hours' },
+    { source: 'TNK-B-023', target: 'TNK-C-091', distance: 1320, logisticsCost: 1850, estimatedTime: '13 hours' },
+    { source: 'TNK-A-047', target: 'TNK-C-091', distance: 2940, logisticsCost: 3920, estimatedTime: '29 hours' }
   ]
 };
+
+// Enhanced Personnel with additional details
+export interface PersonnelExtended extends Personnel {
+  certifications: string[];
+  experienceYears: number;
+  hourlyRate: number;
+  performanceScore: number;
+  recentAssignments: string[];
+}
+
+export const extendedPersonnel: PersonnelExtended[] = [
+  {
+    id: 'PER-001',
+    name: 'SSG James Mitchell',
+    specialization: 'Engine Mechanics',
+    certifications: ['ASE Master Technician', 'Diesel Specialist', 'Heavy Equipment'],
+    experienceYears: 8,
+    currentAssignments: ['TNK-A-042'],
+    availabilityStatus: 'assigned',
+    location: 'Fort Hood, TX',
+    hourlyRate: 45,
+    performanceScore: 92,
+    recentAssignments: ['eng-001', 'eng-003', 'pow-001']
+  },
+  {
+    id: 'PER-002',
+    name: 'SPC Maria Rodriguez',
+    specialization: 'Hydraulics & Suspension',
+    certifications: ['Hydraulic Systems', 'Pneumatic Systems', 'Safety Inspector'],
+    experienceYears: 5,
+    currentAssignments: [],
+    availabilityStatus: 'available',
+    location: 'Fort Hood, TX',
+    hourlyRate: 38,
+    performanceScore: 88,
+    recentAssignments: ['hyd-001', 'sus-002']
+  },
+  {
+    id: 'PER-003',
+    name: 'SGT David Chen',
+    specialization: 'Fire Control Systems',
+    certifications: ['Advanced Electronics', 'Ballistic Computer', 'Targeting Systems'],
+    experienceYears: 10,
+    currentAssignments: ['TNK-A-042', 'TNK-C-091'],
+    availabilityStatus: 'assigned',
+    location: 'Fort Hood, TX',
+    hourlyRate: 52,
+    performanceScore: 95,
+    recentAssignments: ['fcs-001', 'fcs-003']
+  },
+  {
+    id: 'PER-004',
+    name: 'SPC Robert Taylor',
+    specialization: 'Track & Transmission',
+    certifications: ['Track Systems', 'Transmission Repair', 'Drivetrain'],
+    experienceYears: 4,
+    currentAssignments: [],
+    availabilityStatus: 'available',
+    location: 'Fort Benning, GA',
+    hourlyRate: 36,
+    performanceScore: 85,
+    recentAssignments: ['trk-001', 'trn-002']
+  },
+  {
+    id: 'PER-005',
+    name: 'SSG Jennifer Williams',
+    specialization: 'Communications & Electronics',
+    certifications: ['Radio Systems', 'Satellite Comm', 'Network Security'],
+    experienceYears: 9,
+    currentAssignments: ['TNK-B-087'],
+    availabilityStatus: 'assigned',
+    location: 'Fort Hood, TX',
+    hourlyRate: 48,
+    performanceScore: 91,
+    recentAssignments: ['com-001', 'com-004']
+  },
+  {
+    id: 'PER-006',
+    name: 'SPC Michael Brown',
+    specialization: 'General Maintenance',
+    certifications: ['Basic Repair', 'Preventive Maintenance', 'Tool Specialist'],
+    experienceYears: 3,
+    currentAssignments: [],
+    availabilityStatus: 'available',
+    location: 'Fort Hood, TX',
+    hourlyRate: 32,
+    performanceScore: 80,
+    recentAssignments: ['arm-001', 'pow-002']
+  },
+  {
+    id: 'PER-007',
+    name: 'SGT Lisa Anderson',
+    specialization: 'Armor & Structural',
+    certifications: ['Welding', 'Armor Plate', 'Structural Integrity'],
+    experienceYears: 7,
+    currentAssignments: ['TNK-B-087'],
+    availabilityStatus: 'assigned',
+    location: 'Fort Benning, GA',
+    hourlyRate: 44,
+    performanceScore: 87,
+    recentAssignments: ['arm-001', 'arm-003']
+  },
+  {
+    id: 'PER-008',
+    name: 'SPC Kevin Martinez',
+    specialization: 'Power Systems',
+    certifications: ['Electrical Systems', 'Battery Systems', 'Generator Repair'],
+    experienceYears: 4,
+    currentAssignments: [],
+    availabilityStatus: 'available',
+    location: 'Fort Hood, TX',
+    hourlyRate: 36,
+    performanceScore: 83,
+    recentAssignments: ['pow-001', 'pow-003']
+  },
+  {
+    id: 'PER-009',
+    name: 'SSG Thomas Jackson',
+    specialization: 'Engine Mechanics',
+    certifications: ['ASE Certified', 'Turbine Engines', 'Fuel Systems'],
+    experienceYears: 12,
+    currentAssignments: [],
+    availabilityStatus: 'on_leave',
+    location: 'Fort Hood, TX',
+    hourlyRate: 50,
+    performanceScore: 94,
+    recentAssignments: []
+  },
+  {
+    id: 'PER-010',
+    name: 'SPC Amanda White',
+    specialization: 'Hydraulics & Suspension',
+    certifications: ['Hydraulic Specialist', 'Suspension Expert'],
+    experienceYears: 3,
+    currentAssignments: ['TNK-C-091'],
+    availabilityStatus: 'assigned',
+    location: 'Fort Benning, GA',
+    hourlyRate: 35,
+    performanceScore: 82,
+    recentAssignments: ['hyd-002', 'sus-001']
+  },
+  {
+    id: 'PER-011',
+    name: 'SGT Christopher Lee',
+    specialization: 'Track & Transmission',
+    certifications: ['Advanced Drivetrain', 'Track Systems', 'Clutch Specialist'],
+    experienceYears: 6,
+    currentAssignments: [],
+    availabilityStatus: 'available',
+    location: 'Fort Hood, TX',
+    hourlyRate: 42,
+    performanceScore: 89,
+    recentAssignments: ['trk-002', 'trn-001']
+  },
+  {
+    id: 'PER-012',
+    name: 'SPC Sarah Harris',
+    specialization: 'Fire Control Systems',
+    certifications: ['Electronics', 'Computer Systems', 'Optics'],
+    experienceYears: 3,
+    currentAssignments: [],
+    availabilityStatus: 'available',
+    location: 'Fort Benning, GA',
+    hourlyRate: 35,
+    performanceScore: 86,
+    recentAssignments: ['fcs-002']
+  }
+];
+
+// Vendor Database with Performance Metrics
+export interface VendorData {
+  name: string;
+  specialties: string[];
+  avgLeadTimeDays: { [key: string]: number };
+  reliabilityScore: number;
+  costFactor: number;
+  contactInfo: string;
+}
+
+export const vendorDatabase: VendorData[] = [
+  {
+    name: 'General Dynamics Land Systems',
+    specialties: ['Engine', 'Transmission', 'Track', 'Armor'],
+    avgLeadTimeDays: { critical: 2, high: 3, medium: 5, low: 7 },
+    reliabilityScore: 95,
+    costFactor: 1.2,
+    contactInfo: 'parts@gdls.com | 1-800-555-0101'
+  },
+  {
+    name: 'Honeywell Aerospace',
+    specialties: ['Hydraulic', 'Power Systems', 'APU'],
+    avgLeadTimeDays: { critical: 2, high: 4, medium: 6, low: 10 },
+    reliabilityScore: 92,
+    costFactor: 1.1,
+    contactInfo: 'defense@honeywell.com | 1-800-555-0102'
+  },
+  {
+    name: 'BAE Systems',
+    specialties: ['Armor', 'Weapons', 'Fire Control', 'Ammunition'],
+    avgLeadTimeDays: { critical: 3, high: 5, medium: 7, low: 14 },
+    reliabilityScore: 90,
+    costFactor: 1.3,
+    contactInfo: 'support@baesystems.com | 1-800-555-0103'
+  },
+  {
+    name: 'Lockheed Martin',
+    specialties: ['Fire Control', 'Electronics', 'Sensors', 'Optics'],
+    avgLeadTimeDays: { critical: 2, high: 4, medium: 6, low: 12 },
+    reliabilityScore: 93,
+    costFactor: 1.4,
+    contactInfo: 'defense@lockheedmartin.com | 1-800-555-0104'
+  },
+  {
+    name: 'Raytheon Technologies',
+    specialties: ['Electronics', 'Sensors', 'Targeting', 'Communications'],
+    avgLeadTimeDays: { critical: 3, high: 5, medium: 8, low: 15 },
+    reliabilityScore: 88,
+    costFactor: 1.25,
+    contactInfo: 'parts@raytheon.com | 1-800-555-0105'
+  },
+  {
+    name: 'Harris Corporation',
+    specialties: ['Communications', 'Radio', 'Electronics', 'Antennas'],
+    avgLeadTimeDays: { critical: 2, high: 3, medium: 5, low: 8 },
+    reliabilityScore: 91,
+    costFactor: 1.15,
+    contactInfo: 'support@harris.com | 1-800-555-0106'
+  },
+  {
+    name: 'L3Harris Technologies',
+    specialties: ['Communications', 'Electronics', 'Night Vision'],
+    avgLeadTimeDays: { critical: 2, high: 4, medium: 6, low: 10 },
+    reliabilityScore: 89,
+    costFactor: 1.2,
+    contactInfo: 'orders@l3harris.com | 1-800-555-0107'
+  }
+];
+
+// Historical Repair Records
+export interface HistoricalRepair {
+  id: string;
+  componentId: string;
+  componentName: string;
+  date: string;
+  repairType: 'personnel_assignment' | 'work_order' | 'part_transfer';
+  personnelUsed?: string[];
+  partsUsed?: Array<{ partNumber: string; partName: string; quantity: number }>;
+  vendor?: string;
+  actualCost: number;
+  estimatedCost: number;
+  actualHours: number;
+  estimatedHours: number;
+  outcome: 'success' | 'partial_success' | 'failed';
+  healthBefore: number;
+  healthAfter: number;
+  notes: string;
+}
+
+export const historicalRepairs: HistoricalRepair[] = [
+  {
+    id: 'REP-001',
+    componentId: 'eng-001',
+    componentName: 'Main Engine',
+    date: '2025-08-15',
+    repairType: 'personnel_assignment',
+    personnelUsed: ['PER-001'],
+    actualCost: 450,
+    estimatedCost: 500,
+    actualHours: 6,
+    estimatedHours: 6,
+    outcome: 'success',
+    healthBefore: 68,
+    healthAfter: 92,
+    notes: 'Oil filter replacement and system flush completed successfully.'
+  },
+  {
+    id: 'REP-002',
+    componentId: 'hyd-001',
+    componentName: 'Hydraulic System',
+    date: '2025-09-01',
+    repairType: 'work_order',
+    partsUsed: [{ partNumber: 'HYD-5580', partName: 'Hydraulic Seals Kit', quantity: 2 }],
+    vendor: 'Honeywell Aerospace',
+    actualCost: 2450,
+    estimatedCost: 2500,
+    actualHours: 4,
+    estimatedHours: 5,
+    outcome: 'success',
+    healthBefore: 48,
+    healthAfter: 85,
+    notes: 'Seal replacement and pressure testing completed.'
+  },
+  {
+    id: 'REP-003',
+    componentId: 'sus-001',
+    componentName: 'Suspension System',
+    date: '2025-08-22',
+    repairType: 'part_transfer',
+    partsUsed: [{ partNumber: 'SUS-4421-A', partName: 'Suspension Strut Assembly', quantity: 2 }],
+    actualCost: 450,
+    estimatedCost: 500,
+    actualHours: 5,
+    estimatedHours: 6,
+    outcome: 'success',
+    healthBefore: 62,
+    healthAfter: 88,
+    notes: 'Parts transferred from TNK-C-091. Installation completed ahead of schedule.'
+  },
+  {
+    id: 'REP-004',
+    componentId: 'fcs-001',
+    componentName: 'Fire Control System',
+    date: '2025-09-10',
+    repairType: 'personnel_assignment',
+    personnelUsed: ['PER-003', 'PER-012'],
+    actualCost: 300,
+    estimatedCost: 350,
+    actualHours: 3,
+    estimatedHours: 4,
+    outcome: 'success',
+    healthBefore: 82,
+    healthAfter: 95,
+    notes: 'Software update and sensor calibration completed.'
+  },
+  {
+    id: 'REP-005',
+    componentId: 'com-001',
+    componentName: 'Communications Array',
+    date: '2025-08-05',
+    repairType: 'work_order',
+    partsUsed: [{ partNumber: 'COM-8845-M', partName: 'Communications Module', quantity: 1 }],
+    vendor: 'Harris Corporation',
+    actualCost: 15600,
+    estimatedCost: 15000,
+    actualHours: 8,
+    estimatedHours: 8,
+    outcome: 'success',
+    healthBefore: 35,
+    healthAfter: 88,
+    notes: 'Complete module replacement. Extended testing performed.'
+  },
+  {
+    id: 'REP-006',
+    componentId: 'trn-001',
+    componentName: 'Transmission',
+    date: '2025-07-10',
+    repairType: 'personnel_assignment',
+    personnelUsed: ['PER-004', 'PER-011'],
+    actualCost: 600,
+    estimatedCost: 700,
+    actualHours: 8,
+    estimatedHours: 10,
+    outcome: 'success',
+    healthBefore: 71,
+    healthAfter: 91,
+    notes: 'Fluid change and clutch adjustment. No parts needed.'
+  }
+];
+
+// Part Number Database
+export interface PartSpec {
+  partNumber: string;
+  partName: string;
+  category: string;
+  componentTypes: string[];
+  unitCost: number;
+  weight: number;
+  criticality: 'high' | 'medium' | 'low';
+  shelfLife: string;
+  specifications: string;
+}
+
+export const partDatabase: PartSpec[] = [
+  {
+    partNumber: 'ENG-7720-F',
+    partName: 'Engine Oil Filter',
+    category: 'Engine',
+    componentTypes: ['eng-001'],
+    unitCost: 85,
+    weight: 2.5,
+    criticality: 'medium',
+    shelfLife: '2 years',
+    specifications: 'High-capacity filtration, 25 micron'
+  },
+  {
+    partNumber: 'HYD-5580',
+    partName: 'Hydraulic Seals Kit',
+    category: 'Hydraulic',
+    componentTypes: ['hyd-001'],
+    unitCost: 1225,
+    weight: 5.0,
+    criticality: 'high',
+    shelfLife: '5 years',
+    specifications: 'Complete seal kit for main hydraulic system'
+  },
+  {
+    partNumber: 'HYD-2234-B',
+    partName: 'Hydraulic Pump Assembly',
+    category: 'Hydraulic',
+    componentTypes: ['hyd-001'],
+    unitCost: 4450,
+    weight: 45.0,
+    criticality: 'high',
+    shelfLife: '10 years',
+    specifications: '3000 PSI capacity, variable displacement'
+  },
+  {
+    partNumber: 'TRK-2040-B',
+    partName: 'Track Links',
+    category: 'Track',
+    componentTypes: ['trk-001'],
+    unitCost: 125,
+    weight: 12.0,
+    criticality: 'medium',
+    shelfLife: 'Indefinite',
+    specifications: 'Reinforced steel, 63 links per side'
+  },
+  {
+    partNumber: 'TRN-3310-L',
+    partName: 'Transmission Fluid',
+    category: 'Transmission',
+    componentTypes: ['trn-001'],
+    unitCost: 45,
+    weight: 20.0,
+    criticality: 'medium',
+    shelfLife: '3 years',
+    specifications: 'Synthetic ATF, 20L capacity'
+  },
+  {
+    partNumber: 'SUS-1240-W',
+    partName: 'Road Wheels',
+    category: 'Suspension',
+    componentTypes: ['sus-001'],
+    unitCost: 850,
+    weight: 95.0,
+    criticality: 'high',
+    shelfLife: 'Indefinite',
+    specifications: 'Heavy-duty steel, rubber-tired'
+  },
+  {
+    partNumber: 'SUS-4421-A',
+    partName: 'Suspension Strut Assembly',
+    category: 'Suspension',
+    componentTypes: ['sus-001'],
+    unitCost: 2200,
+    weight: 65.0,
+    criticality: 'high',
+    shelfLife: '15 years',
+    specifications: 'Torsion bar suspension, adjustable'
+  },
+  {
+    partNumber: 'FCS-9920-C',
+    partName: 'Fire Control Computer Module',
+    category: 'Fire Control',
+    componentTypes: ['fcs-001'],
+    unitCost: 12500,
+    weight: 8.0,
+    criticality: 'high',
+    shelfLife: '10 years',
+    specifications: 'Ballistic computer, environmental sealed'
+  },
+  {
+    partNumber: 'COM-8845-M',
+    partName: 'Communications Module',
+    category: 'Communications',
+    componentTypes: ['com-001'],
+    unitCost: 15600,
+    weight: 12.0,
+    criticality: 'high',
+    shelfLife: '8 years',
+    specifications: 'Multi-band transceiver, encrypted'
+  },
+  {
+    partNumber: 'COM-8850-A',
+    partName: 'Antenna Assembly',
+    category: 'Communications',
+    componentTypes: ['com-001'],
+    unitCost: 750,
+    weight: 3.5,
+    criticality: 'medium',
+    shelfLife: '10 years',
+    specifications: 'Multi-frequency, ruggedized'
+  }
+];
 

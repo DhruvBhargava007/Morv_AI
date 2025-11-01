@@ -540,6 +540,180 @@ def health_check():
     return jsonify({'status': 'healthy', 'database': os.path.exists(DB_PATH)})
 
 
+# ============================================================================
+# REPAIR WORKFLOW ENDPOINTS
+# ============================================================================
+
+@app.route('/api/repair/context', methods=['POST'])
+def store_repair_context():
+    """
+    Store repair workflow context for a component
+    Used to carry context from page to page in the repair workflow
+    """
+    try:
+        data = request.get_json()
+        
+        component_id = data.get('componentId')
+        if not component_id:
+            return jsonify({'error': 'componentId is required'}), 400
+        
+        # Store in context store
+        if AGENTS_AVAILABLE:
+            from agents.context_store import SimpleContextStore
+            context_store = SimpleContextStore()
+            namespace = f"repair_{component_id}"
+            
+            # Store different context pieces
+            if 'component' in data:
+                context_store.store(namespace, 'component', json.dumps(data['component']))
+            
+            if 'tank' in data:
+                context_store.store(namespace, 'tank', json.dumps(data['tank']))
+            
+            if 'aiRecommendation' in data:
+                context_store.store(namespace, 'ai_recommendation', json.dumps(data['aiRecommendation']))
+            
+            if 'healthHistory' in data:
+                context_store.store(namespace, 'health_history', json.dumps(data['healthHistory']))
+            
+            if 'maintenanceHistory' in data:
+                context_store.store(namespace, 'maintenance_history', json.dumps(data['maintenanceHistory']))
+            
+            if 'historicalRepairs' in data:
+                context_store.store(namespace, 'historical_repairs', json.dumps(data['historicalRepairs']))
+            
+            if 'userSelections' in data:
+                context_store.store(namespace, 'user_selections', json.dumps(data['userSelections']))
+            
+            return jsonify({
+                'status': 'success',
+                'componentId': component_id,
+                'timestamp': datetime.now().isoformat()
+            }), 200
+        else:
+            return jsonify({'error': 'Context store not available'}), 503
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/repair/context/<component_id>', methods=['GET'])
+def get_repair_context(component_id: str):
+    """
+    Retrieve stored repair workflow context for a component
+    """
+    try:
+        if AGENTS_AVAILABLE:
+            from agents.context_store import SimpleContextStore
+            context_store = SimpleContextStore()
+            namespace = f"repair_{component_id}"
+            
+            # Retrieve all context pieces
+            context = {}
+            
+            keys = ['component', 'tank', 'ai_recommendation', 'health_history', 
+                   'maintenance_history', 'historical_repairs', 'user_selections']
+            
+            for key in keys:
+                value = context_store.retrieve(namespace, key)
+                if value:
+                    try:
+                        context[key] = json.loads(value) if isinstance(value, str) else value
+                    except:
+                        context[key] = value
+            
+            return jsonify({
+                'status': 'success',
+                'componentId': component_id,
+                'context': context,
+                'timestamp': datetime.now().isoformat()
+            }), 200
+        else:
+            return jsonify({'error': 'Context store not available'}), 503
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/repair/stream', methods=['POST'])
+def stream_repair_recommendation():
+    """
+    Stream AI-powered repair form field recommendations
+    Server-Sent Events (SSE) endpoint
+    """
+    from flask import Response, stream_with_context
+    
+    try:
+        data = request.get_json()
+        
+        component_id = data.get('componentId')
+        tank_id = data.get('tankId')
+        repair_type = data.get('repairType')  # 'personnel_assignment', 'work_order', or 'part_transfer'
+        
+        if not all([component_id, tank_id, repair_type]):
+            return jsonify({'error': 'componentId, tankId, and repairType are required'}), 400
+        
+        if repair_type not in ['personnel_assignment', 'work_order', 'part_transfer']:
+            return jsonify({'error': 'Invalid repairType'}), 400
+        
+        # Initialize repair agent
+        if AGENTS_AVAILABLE:
+            from agents.repair_agent import RepairAgent
+            
+            agent = RepairAgent(tank_id, component_id)
+            
+            def generate():
+                """Generator for SSE stream"""
+                try:
+                    # Send initial connection event
+                    yield f"data: {json.dumps({'type': 'connected', 'status': 'streaming_started'})}\n\n"
+                    
+                    # Stream field recommendations
+                    for field_update in agent.stream_repair_recommendation(repair_type):
+                        try:
+                            # Validate that field_update is valid JSON string
+                            if isinstance(field_update, str):
+                                # Try to parse it to ensure it's valid JSON
+                                parsed = json.loads(field_update)
+                                # Ensure it has required fields
+                                if 'field' in parsed:
+                                    yield f"data: {field_update}\n\n"
+                                else:
+                                    print(f"Warning: Invalid field update structure: {field_update}")
+                            else:
+                                # If it's already a dict, stringify it
+                                yield f"data: {json.dumps(field_update)}\n\n"
+                        except (json.JSONDecodeError, TypeError) as e:
+                            print(f"Warning: Skipping invalid JSON from agent: {field_update}")
+                            continue
+                        except Exception as e:
+                            print(f"Error processing field update: {e}")
+                            yield f"data: {json.dumps({'type': 'error', 'error': f'Error processing field: {str(e)}'})}\n\n"
+                            break
+                    
+                    # Send completion event only if no errors occurred
+                    yield f"data: {json.dumps({'type': 'complete', 'status': 'streaming_complete'})}\n\n"
+                    
+                except Exception as e:
+                    error_msg = str(e).replace('\n', ' ').replace('"', "'")  # Sanitize error message
+                    yield f"data: {json.dumps({'type': 'error', 'error': error_msg})}\n\n"
+            
+            return Response(
+                stream_with_context(generate()),
+                mimetype='text/event-stream',
+                headers={
+                    'Cache-Control': 'no-cache',
+                    'X-Accel-Buffering': 'no',
+                    'Connection': 'keep-alive'
+                }
+            )
+        else:
+            return jsonify({'error': 'AI agents not available'}), 503
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     # Check if database exists
     if not os.path.exists(DB_PATH):

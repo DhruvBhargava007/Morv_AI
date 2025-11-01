@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TankComponent, Tank } from '@/lib/types';
-import { FileText, Package } from 'lucide-react';
+import { FileText, Sparkles, Lock, Unlock } from 'lucide-react';
 import { generateWONumber, getPriorityFromComponent } from '@/lib/repair-utils';
+import { useRepairStream } from '@/lib/hooks/useRepairStream';
 
 interface WorkOrderFormProps {
   component: TankComponent;
@@ -14,6 +15,7 @@ interface WorkOrderFormProps {
   isRecommended?: boolean;
   userRole: 'admin' | 'technician';
   onSubmit: (workOrder: any) => void;
+  onStreamUpdate?: (updates: any[]) => void;
 }
 
 const vendors = [
@@ -31,7 +33,8 @@ export function WorkOrderForm({
   tank, 
   isRecommended = false,
   userRole,
-  onSubmit 
+  onSubmit,
+  onStreamUpdate
 }: WorkOrderFormProps) {
   const [woNumber] = useState(generateWONumber());
   const [partNumber, setPartNumber] = useState('');
@@ -42,6 +45,76 @@ export function WorkOrderForm({
   const [vendor, setVendor] = useState(vendors[0]);
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [deliveryTimeline, setDeliveryTimeline] = useState('3-5 days');
+  
+  // AI assistance state
+  const [aiAssistEnabled, setAiAssistEnabled] = useState(false);
+  const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
+  const { streamState, startStream, getFieldValue, getFieldReasoning } = useRepairStream();
+
+  // Apply AI recommendations as they come in
+  useEffect(() => {
+    if (streamState.updates.length > 0) {
+      streamState.updates.forEach((update) => {
+        // Only update if field is not locked
+        if (!lockedFields.has(update.field)) {
+          switch (update.field) {
+            case 'partNumber':
+              setPartNumber(update.value);
+              break;
+            case 'partName':
+              setPartName(update.value);
+              break;
+            case 'quantity':
+              setQuantity(Number(update.value));
+              break;
+            case 'priority':
+              setPriority(update.value);
+              break;
+            case 'justification':
+              setJustification(update.value);
+              break;
+            case 'vendor':
+              setVendor(update.value);
+              break;
+            case 'estimatedCost':
+              setEstimatedCost(Number(update.value));
+              break;
+            case 'deliveryTimeline':
+              setDeliveryTimeline(update.value);
+              break;
+          }
+        }
+      });
+      
+      // Notify parent about updates
+      onStreamUpdate?.(streamState.updates);
+    }
+  }, [streamState.updates, lockedFields, onStreamUpdate]);
+
+  const toggleFieldLock = (field: string) => {
+    setLockedFields((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(field)) {
+        newSet.delete(field);
+      } else {
+        newSet.add(field);
+      }
+      return newSet;
+    });
+  };
+
+  const handleAIAssist = () => {
+    setAiAssistEnabled(true);
+    startStream(component.id, tank.id, 'work_order');
+  };
+
+  const isFieldLocked = (field: string) => lockedFields.has(field);
+  const getFieldHighlight = (field: string) => {
+    if (streamState.completedFields.has(field) && !isFieldLocked(field)) {
+      return 'ring-2 ring-blue-500/50 bg-blue-950/20';
+    }
+    return '';
+  };
 
   const handleSubmit = () => {
     const workOrder = {
@@ -79,7 +152,7 @@ export function WorkOrderForm({
   return (
     <Card className={`bg-slate-900 border-slate-700 ${isRecommended ? 'ring-2 ring-emerald-500/50' : ''}`}>
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-orange-400" />
             <CardTitle className="text-slate-100">Work Order</CardTitle>
@@ -90,6 +163,21 @@ export function WorkOrderForm({
             </Badge>
           )}
         </div>
+        {!aiAssistEnabled && (
+          <Button
+            onClick={handleAIAssist}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI Assist - Auto-Fill Form
+          </Button>
+        )}
+        {aiAssistEnabled && streamState.isStreaming && (
+          <div className="text-sm text-blue-400 text-center py-2">
+            <Sparkles className="w-4 h-4 inline mr-2 animate-pulse" />
+            AI is analyzing and filling fields...
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* WO Number & Component Info */}
@@ -117,16 +205,36 @@ export function WorkOrderForm({
         {/* Part Information */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">
-              Part Number <span className="text-red-400">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-slate-300">
+                Part Number <span className="text-red-400">*</span>
+              </label>
+              {aiAssistEnabled && (
+                <button
+                  onClick={() => toggleFieldLock('partNumber')}
+                  className="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1"
+                >
+                  {isFieldLocked('partNumber') ? (
+                    <><Lock className="w-3 h-3" /> Locked</>
+                  ) : (
+                    <><Unlock className="w-3 h-3" /> Unlocked</>
+                  )}
+                </button>
+              )}
+            </div>
             <input
               type="text"
               value={partNumber}
               onChange={(e) => setPartNumber(e.target.value)}
               placeholder="e.g., TRK-5589-A"
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono"
+              disabled={isFieldLocked('partNumber')}
+              className={`w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono transition-all ${getFieldHighlight('partNumber')} ${isFieldLocked('partNumber') ? 'opacity-60 cursor-not-allowed' : ''}`}
             />
+            {aiAssistEnabled && getFieldReasoning('partNumber') && (
+              <div className="mt-1 text-xs text-blue-400 italic">
+                AI: {getFieldReasoning('partNumber')}
+              </div>
+            )}
           </div>
           <div>
             <label className="text-sm font-semibold text-slate-300 mb-2 block">

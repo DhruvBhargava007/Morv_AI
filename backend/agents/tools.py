@@ -270,6 +270,277 @@ def query_priority_policy(component_id: str) -> dict:
     }
 
 
+@composio_tool(
+    name="query_historical_repairs",
+    description="Get historical repair data for a component"
+)
+def query_historical_repairs(component_id: str, tank_id: str = None) -> dict:
+    """
+    Gets historical repair records for a component
+    
+    Args:
+        component_id: Component identifier
+        tank_id: Optional tank identifier for filtering
+    
+    Returns:
+        Dict with historical repair records
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Query maintenance history as proxy for repairs
+    query = """
+    SELECT timestamp, componentId, healthBefore, healthAfter, 
+           maintenanceType, costUSD, hoursSpent
+    FROM maintenance
+    WHERE componentId = ?
+    """
+    
+    params = [component_id]
+    if tank_id:
+        query += " AND tankId = ?"
+        params.append(tank_id)
+    
+    query += " ORDER BY timestamp DESC LIMIT 10"
+    
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    
+    repairs = []
+    for row in rows:
+        repairs.append({
+            'date': row['timestamp'],
+            'component_id': row['componentId'],
+            'health_before': row['healthBefore'],
+            'health_after': row['healthAfter'],
+            'maintenance_type': row['maintenanceType'],
+            'cost': row['costUSD'],
+            'hours_spent': row['hoursSpent']
+        })
+    
+    return {
+        'component_id': component_id,
+        'repairs': repairs,
+        'count': len(repairs)
+    }
+
+
+@composio_tool(
+    name="estimate_repair_cost",
+    description="Estimate cost for a repair based on component and repair type"
+)
+def estimate_repair_cost(component_id: str, repair_type: str, severity: str = 'medium') -> dict:
+    """
+    Estimates repair cost
+    
+    Args:
+        component_id: Component identifier
+        repair_type: Type of repair (personnel, work_order, transfer)
+        severity: Severity level (low, medium, high, critical)
+    
+    Returns:
+        Dict with cost estimates
+    """
+    # Base costs by component type
+    component_type = component_id.split('-')[0]
+    
+    base_costs = {
+        'eng': {'personnel': 800, 'work_order': 3500, 'transfer': 600},
+        'trn': {'personnel': 700, 'work_order': 4200, 'transfer': 550},
+        'hyd': {'personnel': 500, 'work_order': 2500, 'transfer': 450},
+        'sus': {'personnel': 600, 'work_order': 2800, 'transfer': 500},
+        'fcs': {'personnel': 400, 'work_order': 8500, 'transfer': 380},
+        'com': {'personnel': 350, 'work_order': 15000, 'transfer': 320}
+    }
+    
+    severity_multipliers = {
+        'low': 0.8,
+        'medium': 1.0,
+        'high': 1.3,
+        'critical': 1.6
+    }
+    
+    base_cost = base_costs.get(component_type, {}).get(repair_type, 1000)
+    multiplier = severity_multipliers.get(severity, 1.0)
+    
+    estimated_cost = base_cost * multiplier
+    
+    return {
+        'component_id': component_id,
+        'repair_type': repair_type,
+        'severity': severity,
+        'estimated_cost': round(estimated_cost, 2),
+        'base_cost': base_cost,
+        'multiplier': multiplier,
+        'confidence': 0.75
+    }
+
+
+@composio_tool(
+    name="find_optimal_vendor",
+    description="Find the best vendor for a part based on priority and lead time requirements"
+)
+def find_optimal_vendor(part_type: str, priority: str = 'medium', max_lead_time_days: int = None) -> dict:
+    """
+    Finds optimal vendor
+    
+    Args:
+        part_type: Type of part (Engine, Hydraulic, etc.)
+        priority: Priority level (critical/high/medium/low)
+        max_lead_time_days: Maximum acceptable lead time
+    
+    Returns:
+        Dict with recommended vendor
+    """
+    # Vendor database
+    vendors = [
+        {
+            'name': 'General Dynamics Land Systems',
+            'specialties': ['Engine', 'Transmission', 'Track'],
+            'lead_times': {'critical': 2, 'high': 3, 'medium': 5, 'low': 7},
+            'reliability': 95,
+            'cost_factor': 1.2
+        },
+        {
+            'name': 'Honeywell Aerospace',
+            'specialties': ['Hydraulic', 'Power'],
+            'lead_times': {'critical': 2, 'high': 4, 'medium': 6, 'low': 10},
+            'reliability': 92,
+            'cost_factor': 1.1
+        },
+        {
+            'name': 'BAE Systems',
+            'specialties': ['Armor', 'Weapons', 'Fire Control'],
+            'lead_times': {'critical': 3, 'high': 5, 'medium': 7, 'low': 14},
+            'reliability': 90,
+            'cost_factor': 1.3
+        },
+        {
+            'name': 'Harris Corporation',
+            'specialties': ['Communications', 'Radio', 'Electronics'],
+            'lead_times': {'critical': 2, 'high': 3, 'medium': 5, 'low': 8},
+            'reliability': 91,
+            'cost_factor': 1.15
+        },
+        {
+            'name': 'Lockheed Martin',
+            'specialties': ['Fire Control', 'Electronics', 'Sensors'],
+            'lead_times': {'critical': 2, 'high': 4, 'medium': 6, 'low': 12},
+            'reliability': 93,
+            'cost_factor': 1.4
+        }
+    ]
+    
+    # Filter by specialty
+    matching_vendors = [v for v in vendors if any(spec in part_type for spec in v['specialties'])]
+    
+    if not matching_vendors:
+        matching_vendors = vendors  # Fallback to all vendors
+    
+    # Score vendors based on priority and constraints
+    scored_vendors = []
+    for vendor in matching_vendors:
+        lead_time = vendor['lead_times'].get(priority, 7)
+        
+        if max_lead_time_days and lead_time > max_lead_time_days:
+            continue
+        
+        # Score: higher reliability, lower lead time, lower cost is better
+        score = (vendor['reliability'] * 0.4) - (lead_time * 2) - (vendor['cost_factor'] * 10)
+        
+        scored_vendors.append({
+            'vendor': vendor['name'],
+            'lead_time_days': lead_time,
+            'reliability': vendor['reliability'],
+            'cost_factor': vendor['cost_factor'],
+            'score': score
+        })
+    
+    if not scored_vendors:
+        return {
+            'error': 'No vendors found matching criteria',
+            'part_type': part_type,
+            'priority': priority
+        }
+    
+    # Sort by score
+    scored_vendors.sort(key=lambda x: x['score'], reverse=True)
+    best_vendor = scored_vendors[0]
+    
+    return {
+        'recommended_vendor': best_vendor['vendor'],
+        'lead_time_days': best_vendor['lead_time_days'],
+        'reliability_score': best_vendor['reliability'],
+        'cost_factor': best_vendor['cost_factor'],
+        'alternatives': scored_vendors[1:3] if len(scored_vendors) > 1 else [],
+        'part_type': part_type,
+        'priority': priority
+    }
+
+
+@composio_tool(
+    name="calculate_delivery_timeline",
+    description="Calculate estimated delivery timeline based on vendor, priority, and location"
+)
+def calculate_delivery_timeline(vendor: str, priority: str, location: str = None) -> dict:
+    """
+    Calculates delivery timeline
+    
+    Args:
+        vendor: Vendor name
+        priority: Priority level
+        location: Delivery location (optional)
+    
+    Returns:
+        Dict with timeline estimates
+    """
+    # Base lead times by vendor
+    vendor_lead_times = {
+        'General Dynamics Land Systems': {'critical': 2, 'high': 3, 'medium': 5, 'low': 7},
+        'Honeywell Aerospace': {'critical': 2, 'high': 4, 'medium': 6, 'low': 10},
+        'BAE Systems': {'critical': 3, 'high': 5, 'medium': 7, 'low': 14},
+        'Harris Corporation': {'critical': 2, 'high': 3, 'medium': 5, 'low': 8},
+        'Lockheed Martin': {'critical': 2, 'high': 4, 'medium': 6, 'low': 12},
+        'Raytheon Technologies': {'critical': 3, 'high': 5, 'medium': 8, 'low': 15},
+        'L3Harris Technologies': {'critical': 2, 'high': 4, 'medium': 6, 'low': 10}
+    }
+    
+    base_days = vendor_lead_times.get(vendor, {}).get(priority, 7)
+    
+    # Add location-based adjustments
+    location_delays = {
+        'Fort Hood': 0,
+        'Fort Benning': 1,
+        'Fort Irwin': 2,
+        'Overseas': 5
+    }
+    
+    location_delay = 0
+    if location:
+        for loc_key, delay in location_delays.items():
+            if loc_key in location:
+                location_delay = delay
+                break
+    
+    total_days = base_days + location_delay
+    
+    # Format timeline string
+    if total_days <= 2:
+        timeline_str = f"{total_days * 24}-{(total_days + 1) * 24} hours"
+    else:
+        timeline_str = f"{total_days}-{total_days + 2} days"
+    
+    return {
+        'vendor': vendor,
+        'priority': priority,
+        'location': location,
+        'estimated_days': total_days,
+        'timeline_string': timeline_str,
+        'expedited_available': priority in ['critical', 'high']
+    }
+
+
 # Register all tools with Composio
 TOOLS = [
     ingest_data,
@@ -279,6 +550,10 @@ TOOLS = [
     check_parts_inventory,
     match_personnel,
     generate_work_order,
-    query_priority_policy
+    query_priority_policy,
+    query_historical_repairs,
+    estimate_repair_cost,
+    find_optimal_vendor,
+    calculate_delivery_timeline
 ]
 

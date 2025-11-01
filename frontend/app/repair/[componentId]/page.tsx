@@ -9,10 +9,12 @@ import { AIRecommendation } from '@/components/repair/AIRecommendation';
 import { PersonnelAssignment } from '@/components/repair/PersonnelAssignment';
 import { WorkOrderForm } from '@/components/repair/WorkOrderForm';
 import { PartTransferSystem } from '@/components/repair/PartTransferSystem';
+import { LiveReasoningPanel } from '@/components/repair/LiveReasoningPanel';
 import { TankComponent, Tank } from '@/lib/types';
 import { allTanks, dummyPersonnel, tankNetwork } from '@/lib/dummy-data';
 import { getAIRecommendation } from '@/lib/repair-utils';
-import { ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
+import RepairContextManager from '@/lib/repair-context';
+import { ArrowLeft, Loader2, CheckCircle, Database } from 'lucide-react';
 
 interface RepairPageProps {
   params: Promise<{ componentId: string }>;
@@ -29,10 +31,16 @@ export default function RepairPage({ params }: RepairPageProps) {
   const [recommendation, setRecommendation] = useState<any>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submittedType, setSubmittedType] = useState<string>('');
+  
+  // AI streaming state for reasoning panel
+  const [streamUpdates, setStreamUpdates] = useState<any[]>([]);
+  const [currentStreamingType, setCurrentStreamingType] = useState<string>('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [contextLoaded, setContextLoaded] = useState(false);
 
   useEffect(() => {
-    // Simulate AI analysis with 1 second delay
-    const timer = setTimeout(() => {
+    // Load component and repair context
+    const loadRepairData = async () => {
       // Find the component and tank
       let foundComponent: TankComponent | null = null;
       let foundTank: Tank | null = null;
@@ -53,13 +61,32 @@ export default function RepairPage({ params }: RepairPageProps) {
         // Get AI recommendation
         const aiRec = getAIRecommendation(foundComponent, foundTank, dummyPersonnel, allTanks);
         setRecommendation(aiRec);
+        
+        // Build and store comprehensive repair context
+        const repairContext = RepairContextManager.buildRepairContext(
+          foundComponent,
+          foundTank,
+          aiRec
+        );
+        
+        await RepairContextManager.storeContext(componentId, repairContext);
+        setContextLoaded(true);
       }
 
       setLoading(false);
-    }, 1000);
+    };
+
+    // Simulate analysis delay for UX
+    const timer = setTimeout(loadRepairData, 1000);
 
     return () => clearTimeout(timer);
   }, [componentId]);
+
+  const handleStreamUpdate = (updates: any[], formType: string) => {
+    setStreamUpdates(updates);
+    setCurrentStreamingType(formType);
+    setIsStreaming(updates.length > 0);
+  };
 
   const handleSubmit = (type: string, data: any) => {
     console.log(`Submitted ${type}:`, data);
@@ -225,6 +252,24 @@ export default function RepairPage({ params }: RepairPageProps) {
           </div>
         )}
 
+        {/* Context Loaded Indicator */}
+        {contextLoaded && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-emerald-400">
+            <Database className="w-4 h-4" />
+            <span>Repair context loaded - AI agents have full component history</span>
+          </div>
+        )}
+
+        {/* Live AI Reasoning Panel */}
+        <div className="mb-6">
+          <LiveReasoningPanel
+            isStreaming={isStreaming}
+            isConnected={false}
+            updates={streamUpdates}
+            currentField={currentStreamingType}
+          />
+        </div>
+
         {/* Three Options */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Option 1: Personnel Assignment */}
@@ -235,6 +280,7 @@ export default function RepairPage({ params }: RepairPageProps) {
             isRecommended={recommendation?.type === 'assign'}
             userRole={userRole}
             onSubmit={(data) => handleSubmit('personnel assignment', data)}
+            onStreamUpdate={(updates) => handleStreamUpdate(updates, 'personnel_assignment')}
           />
 
           {/* Option 2: Work Order */}
@@ -244,6 +290,7 @@ export default function RepairPage({ params }: RepairPageProps) {
             isRecommended={recommendation?.type === 'order'}
             userRole={userRole}
             onSubmit={(data) => handleSubmit('work order', data)}
+            onStreamUpdate={(updates) => handleStreamUpdate(updates, 'work_order')}
           />
 
           {/* Option 3: Part Transfer */}
@@ -255,6 +302,7 @@ export default function RepairPage({ params }: RepairPageProps) {
             isRecommended={recommendation?.type === 'transfer'}
             userRole={userRole}
             onSubmit={(data) => handleSubmit('part transfer', data)}
+            onStreamUpdate={(updates) => handleStreamUpdate(updates, 'part_transfer')}
           />
         </div>
 

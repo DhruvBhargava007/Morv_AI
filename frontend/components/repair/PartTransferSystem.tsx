@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TankComponent, Tank, TankNetwork } from '@/lib/types';
-import { GitBranch, ArrowRight, TrendingUp, DollarSign, Clock } from 'lucide-react';
+import { GitBranch, ArrowRight, TrendingUp, DollarSign, Clock, Sparkles, Lock, Unlock } from 'lucide-react';
 import { generateTransferId, calculateTransferPath } from '@/lib/repair-utils';
+import { useRepairStream } from '@/lib/hooks/useRepairStream';
 
 interface PartTransferSystemProps {
   component: TankComponent;
@@ -16,6 +17,7 @@ interface PartTransferSystemProps {
   isRecommended?: boolean;
   userRole: 'admin' | 'technician';
   onSubmit: (transfer: any) => void;
+  onStreamUpdate?: (updates: any[]) => void;
 }
 
 export function PartTransferSystem({
@@ -25,13 +27,73 @@ export function PartTransferSystem({
   tankNetwork,
   isRecommended = false,
   userRole,
-  onSubmit
+  onSubmit,
+  onStreamUpdate
 }: PartTransferSystemProps) {
   const [sourceTankId, setSourceTankId] = useState('');
   const [partId, setPartId] = useState('');
   const [partName, setPartName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState('');
+
+  // AI assistance state
+  const [aiAssistEnabled, setAiAssistEnabled] = useState(false);
+  const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
+  const { streamState, startStream, getFieldValue, getFieldReasoning } = useRepairStream();
+
+  // Apply AI recommendations as they come in
+  useEffect(() => {
+    if (streamState.updates.length > 0) {
+      streamState.updates.forEach((update) => {
+        if (!lockedFields.has(update.field)) {
+          switch (update.field) {
+            case 'sourceTankId':
+              setSourceTankId(update.value);
+              break;
+            case 'partId':
+              setPartId(update.value);
+              break;
+            case 'partName':
+              setPartName(update.value);
+              break;
+            case 'quantity':
+              setQuantity(Number(update.value));
+              break;
+            case 'reason':
+              setReason(update.value);
+              break;
+          }
+        }
+      });
+      
+      onStreamUpdate?.(streamState.updates);
+    }
+  }, [streamState.updates, lockedFields, onStreamUpdate]);
+
+  const toggleFieldLock = (field: string) => {
+    setLockedFields((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(field)) {
+        newSet.delete(field);
+      } else {
+        newSet.add(field);
+      }
+      return newSet;
+    });
+  };
+
+  const handleAIAssist = () => {
+    setAiAssistEnabled(true);
+    startStream(component.id, tank.id, 'part_transfer');
+  };
+
+  const isFieldLocked = (field: string) => lockedFields.has(field);
+  const getFieldHighlight = (field: string) => {
+    if (streamState.completedFields.has(field) && !isFieldLocked(field)) {
+      return 'ring-2 ring-blue-500/50 bg-blue-950/20';
+    }
+    return '';
+  };
 
   // Filter tanks that have compatible parts
   const availableTanks = allTanks.filter(t => t.id !== tank.id);
@@ -93,7 +155,7 @@ export function PartTransferSystem({
   return (
     <Card className={`bg-slate-900 border-slate-700 ${isRecommended ? 'ring-2 ring-emerald-500/50' : ''}`}>
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <GitBranch className="w-5 h-5 text-purple-400" />
             <CardTitle className="text-slate-100">Part Transfer</CardTitle>
@@ -104,6 +166,21 @@ export function PartTransferSystem({
             </Badge>
           )}
         </div>
+        {!aiAssistEnabled && (
+          <Button
+            onClick={handleAIAssist}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI Assist - Auto-Fill Form
+          </Button>
+        )}
+        {aiAssistEnabled && streamState.isStreaming && (
+          <div className="text-sm text-blue-400 text-center py-2">
+            <Sparkles className="w-4 h-4 inline mr-2 animate-pulse" />
+            AI is analyzing and filling fields...
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Network Visualization */}
