@@ -62,7 +62,7 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
     partName: string;
     source: 'voice' | 'text';
   }>>([]);
-  
+
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -176,36 +176,36 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
       return;
     }
 
-    const recommendation = {
+      const recommendation = {
       partSection: selectedPart?.name?.toLowerCase() || selectedPart?.partName?.toLowerCase() || 'turret',
-      recommendation: text,
-      timestamp: new Date().toISOString(),
+        recommendation: text,
+        timestamp: new Date().toISOString(),
       partName: selectedPart?.name || selectedPart?.partName || 'Unknown',
       source: 'voice' as const
-    };
+      };
 
-    setRecommendations(prev => [...prev, recommendation]);
+      setRecommendations(prev => [...prev, recommendation]);
     setTranscript('');
     setTranscriptHistory([]);
     finalTranscriptRef.current = '';
 
-    // Create JSON file with the recommendation
-    const data = {
-      ...recommendation,
-      vehicleId: 'TANK-001',
-    };
+      // Create JSON file with the recommendation
+      const data = {
+        ...recommendation,
+        vehicleId: 'TANK-001',
+      };
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `recommendation_${recommendation.partSection}_${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `recommendation_${recommendation.partSection}_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
   };
 
   const handleSaveTextInput = () => {
@@ -263,7 +263,7 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
             {!isRecording ? (
               <button
                 onClick={handleStartRecording}
-                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white font-medium rounded-md border border-gray-700 hover:border-gray-600 transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 <Mic className="w-5 h-5" />
                 Start Voice Recording
@@ -271,17 +271,17 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
             ) : (
               <button
                 onClick={handleStopRecording}
-                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-md border border-gray-600 hover:border-gray-500 transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 <Square className="w-5 h-5" />
                 Stop Recording
               </button>
             )}
             
-            <button
+          <button
               onClick={() => setShowTextInput(!showTextInput)}
-              className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-            >
+            className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white font-medium rounded-md border border-gray-700 hover:border-gray-600 transition-colors duration-200 flex items-center justify-center gap-2"
+          >
               <Type className="w-5 h-5" />
               {showTextInput ? 'Hide' : 'Type'} Text
             </button>
@@ -329,7 +329,7 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
               className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all duration-200"
             >
               Save Voice Transcript
-            </button>
+          </button>
           )}
 
           {/* Transcript History */}
@@ -354,7 +354,7 @@ const SpecChanger: React.FC<SpecChangerProps> = ({ selectedPart }) => {
                 <div key={index} className="p-3 bg-gray-800/50 border border-gray-700 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-blue-400 capitalize">{rec.partSection}</span>
+                    <span className="text-xs font-semibold text-blue-400 capitalize">{rec.partSection}</span>
                       <span className={`text-xs px-1.5 py-0.5 rounded ${
                         rec.source === 'voice' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
                       }`}>

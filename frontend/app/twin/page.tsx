@@ -183,10 +183,10 @@ export default function DigitalTwinPage() {
       } else {
         // Fallback to mock data if API fails
         console.log('⚠️ API data not available, using mock data for:', dbPartName);
-        const partData = partsData[dbPartName] || partsData['turret'];
-        if (partData) {
-          setSelectedPart(partData);
-          setDrawerOpen(true);
+      const partData = partsData[dbPartName] || partsData['turret'];
+      if (partData) {
+        setSelectedPart(partData);
+        setDrawerOpen(true);
         }
       }
     } catch (error) {

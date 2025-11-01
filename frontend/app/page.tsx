@@ -72,16 +72,16 @@ export default function MarketingLanding() {
                 </video>
 
                 {/* If video doesn't exist, show animated placeholder */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-indigo-900/50">
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-900/50 via-gray-800/50 to-black/50">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center space-y-4">
-                      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                      <p className="text-blue-300 text-sm font-medium">System Diagnostics Running...</p>
+                      <div className="w-16 h-16 border-4 border-gray-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                      <p className="text-gray-400 text-sm font-medium">System Diagnostics Running...</p>
                       <div className="space-y-2">
-                        <div className="h-2 bg-blue-500/30 rounded-full w-64 mx-auto overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full animate-pulse" style={{ width: '75%' }} />
+                        <div className="h-2 bg-gray-700/30 rounded-full w-64 mx-auto overflow-hidden">
+                          <div className="h-full bg-gray-600 rounded-full animate-pulse" style={{ width: '75%' }} />
                         </div>
-                        <p className="text-blue-400/70 text-xs font-mono">Analyzing 847 components...</p>
+                        <p className="text-gray-500 text-xs font-mono">Analyzing 847 components...</p>
                       </div>
                     </div>
                   </div>
@@ -167,19 +167,10 @@ export default function MarketingLanding() {
         <div className="flex justify-center w-full">
           <button
             onClick={() => router.push('/twin')}
-            className="group relative px-12 py-6 bg-black hover:bg-gray-900 text-gray-300 hover:text-white text-xl font-bold rounded-lg shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden"
+            className="px-12 py-6 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white text-xl font-medium rounded-md border border-gray-700 hover:border-gray-600 transition-colors duration-200 flex items-center justify-center gap-3"
           >
-          {/* Button subtle glow effect */}
-          <div className="absolute inset-0 bg-gray-800 opacity-0 group-hover:opacity-10 blur-xl transition-opacity duration-300" />
-          
-          {/* Button content - Centered */}
-          <div className="relative flex items-center justify-center gap-3">
             <span>Try Us Now</span>
-            <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
-          </div>
-
-          {/* Subtle shimmer effect */}
-          <div className="absolute inset-0 -top-full bg-gradient-to-b from-transparent via-gray-700/10 to-transparent group-hover:top-full transition-all duration-700" />
+            <ArrowRight className="w-6 h-6" />
           </button>
         </div>
 
